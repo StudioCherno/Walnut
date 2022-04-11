@@ -1,0 +1,17 @@
+[submodule "Walnut/vendor/imgui/src"]
+	path = Walnut/vendor/imgui/src
+	url = https://github.com/ocornut/imgui
+	branch = docking
+[submodule "vendor/imgui"]
+	path = vendor/imgui
+	url = https://github.com/TheCherno/imgui
+	branch = docking
+[submodule "vendor/glfw"]
+	path = vendor/glfw
+	url = https://github.com/thecherno/glfw
+[submodule "vendor/glm"]
+	path = vendor/glm
+	url = https://github.com/g-truc/glm
+[submodule "vendor/GLFW"]
+	path = vendor/GLFW
+	url = https://github.com/TheCherno/GLFW
