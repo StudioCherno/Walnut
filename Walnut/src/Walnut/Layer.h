@@ -10,7 +10,7 @@ namespace Walnut {
 		virtual void OnAttach() {}
 		virtual void OnDetach() {}
 
-		virtual void OnImGuiRender() {}
+		virtual void OnUIRender() {}
 	};
 
 }

@@ -6,7 +6,7 @@
 class ExampleLayer : public Walnut::Layer
 {
 public:
-	virtual void OnImGuiRender() override
+	virtual void OnUIRender() override
 	{
 		ImGui::Begin("Hello");
 		ImGui::Button("Button");

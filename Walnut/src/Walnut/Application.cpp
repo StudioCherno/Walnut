@@ -590,7 +590,7 @@ namespace Walnut {
 				}
 
 				for (auto& layer : m_LayerStack)
-					layer->OnImGuiRender();
+					layer->OnUIRender();
 
 				ImGui::End();
 			}
