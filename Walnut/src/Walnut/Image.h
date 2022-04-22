@@ -9,7 +9,9 @@ namespace Walnut {
 	enum class ImageFormat
 	{
 		None = 0,
+		RGB,
 		RGBA,
+		RGB32F,
 		RGBA32F
 	};
 

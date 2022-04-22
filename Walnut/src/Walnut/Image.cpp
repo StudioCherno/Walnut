@@ -29,7 +29,9 @@ namespace Walnut {
 		{
 			switch (format)
 			{
+				case ImageFormat::RGB:     return 4;
 				case ImageFormat::RGBA:    return 4;
+				case ImageFormat::RGB32F:  return 32;
 				case ImageFormat::RGBA32F: return 32;
 			}
 			return 0;
@@ -39,7 +41,9 @@ namespace Walnut {
 		{
 			switch (format)
 			{
+				case ImageFormat::RGB:     return VK_FORMAT_R8G8B8_UNORM;
 				case ImageFormat::RGBA:    return VK_FORMAT_R8G8B8A8_UNORM;
+				case ImageFormat::RGB32F:  return VK_FORMAT_R32G32B32_SFLOAT;
 				case ImageFormat::RGBA32F: return VK_FORMAT_R32G32B32A32_SFLOAT;
 			}
 			return (VkFormat)0;
