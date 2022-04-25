@@ -46,6 +46,8 @@ static ImGui_ImplVulkanH_Window g_MainWindowData;
 static int                      g_MinImageCount = 2;
 static bool                     g_SwapChainRebuild = false;
 
+static std::vector<std::vector<VkCommandBuffer>> s_AllocatedCommandBuffers;
+
 void check_vk_result(VkResult err)
 {
 	if (err == 0)
@@ -282,6 +284,14 @@ static void FrameRender(ImGui_ImplVulkanH_Window* wd, ImDrawData* draw_data)
 		check_vk_result(err);
 	}
 	{
+		// Free command buffers allocated by Application::GetCommandBuffer
+		auto& allocatedCommandBuffers = s_AllocatedCommandBuffers[wd->FrameIndex];
+		if (allocatedCommandBuffers.size() > 0)
+		{
+			vkFreeCommandBuffers(g_Device, fd->CommandPool, (uint32_t)allocatedCommandBuffers.size(), allocatedCommandBuffers.data());
+			allocatedCommandBuffers.clear();
+		}
+
 		err = vkResetCommandPool(g_Device, fd->CommandPool, 0);
 		check_vk_result(err);
 		VkCommandBufferBeginInfo info = {};
@@ -399,6 +409,8 @@ namespace Walnut {
 		glfwGetFramebufferSize(m_WindowHandle, &w, &h);
 		ImGui_ImplVulkanH_Window* wd = &g_MainWindowData;
 		SetupVulkanWindow(wd, surface, w, h);
+
+		s_AllocatedCommandBuffers.resize(wd->ImageCount);
 
 		// Setup Dear ImGui context
 		IMGUI_CHECKVERSION();
@@ -653,7 +665,7 @@ namespace Walnut {
 		cmdBufAllocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
 		cmdBufAllocateInfo.commandBufferCount = 1;
 
-		VkCommandBuffer command_buffer;
+		VkCommandBuffer& command_buffer = s_AllocatedCommandBuffers[wd->FrameIndex].emplace_back();
 		auto err = vkAllocateCommandBuffers(g_Device, &cmdBufAllocateInfo, &command_buffer);
 
 		VkCommandBufferBeginInfo begin_info = {};
