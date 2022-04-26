@@ -48,6 +48,9 @@ static bool                     g_SwapChainRebuild = false;
 
 static std::vector<std::vector<VkCommandBuffer>> s_AllocatedCommandBuffers;
 
+// NOTE(Yan): does this need to be per-frame in flight for this simple case?
+static std::vector<std::function<void()>> s_ResourceFreeQueue;
+
 void check_vk_result(VkResult err)
 {
 	if (err == 0)
@@ -283,6 +286,13 @@ static void FrameRender(ImGui_ImplVulkanH_Window* wd, ImDrawData* draw_data)
 		err = vkResetFences(g_Device, 1, &fd->Fence);
 		check_vk_result(err);
 	}
+	
+	{
+		// Free resources in queue
+		for (auto& func : s_ResourceFreeQueue)
+			func();
+		s_ResourceFreeQueue.clear();
+	}
 	{
 		// Free command buffers allocated by Application::GetCommandBuffer
 		auto& allocatedCommandBuffers = s_AllocatedCommandBuffers[wd->FrameIndex];
@@ -500,6 +510,12 @@ namespace Walnut {
 		// Cleanup
 		VkResult err = vkDeviceWaitIdle(g_Device);
 		check_vk_result(err);
+
+		// Free resources in queue
+		for (auto& func : s_ResourceFreeQueue)
+			func();
+		s_ResourceFreeQueue.clear();
+
 		ImGui_ImplVulkan_Shutdown();
 		ImGui_ImplGlfw_Shutdown();
 		ImGui::DestroyContext();
@@ -706,5 +722,9 @@ namespace Walnut {
 	}
 
 
+	void Application::SubmitResourceFree(std::function<void()>&& func)
+	{
+		s_ResourceFreeQueue.emplace_back(func);
+	}
 
 }

@@ -84,14 +84,18 @@ namespace Walnut {
 
 	Image::~Image()
 	{
-		VkDevice device = Application::GetDevice();
+		Application::SubmitResourceFree([sampler = m_Sampler, imageView = m_ImageView, image = m_Image,
+			memory = m_Memory, stagingBuffer = m_StagingBuffer, stagingBufferMemory = m_StagingBufferMemory]()
+		{
+			VkDevice device = Application::GetDevice();
 
-		vkDestroySampler(device, m_Sampler, nullptr);
-		vkDestroyImageView(device, m_ImageView, nullptr);
-		vkDestroyImage(device, m_Image, nullptr);
-		vkFreeMemory(device, m_Memory, nullptr);
-		vkDestroyBuffer(device, m_StagingBuffer, nullptr);
-		vkFreeMemory(device, m_StagingBufferMemory, nullptr);
+			vkDestroySampler(device, sampler, nullptr);
+			vkDestroyImageView(device, imageView, nullptr);
+			vkDestroyImage(device, image, nullptr);
+			vkFreeMemory(device, memory, nullptr);
+			vkDestroyBuffer(device, stagingBuffer, nullptr);
+			vkFreeMemory(device, stagingBufferMemory, nullptr);
+		});
 	}
 
 	void Image::AllocateMemory(uint64_t size)

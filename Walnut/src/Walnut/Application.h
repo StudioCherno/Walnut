@@ -49,6 +49,8 @@ namespace Walnut {
 
 		static VkCommandBuffer GetCommandBuffer(bool begin);
 		static void FlushCommandBuffer(VkCommandBuffer commandBuffer);
+
+		static void SubmitResourceFree(std::function<void()>&& func);
 	private:
 		void Init();
 		void Shutdown();
