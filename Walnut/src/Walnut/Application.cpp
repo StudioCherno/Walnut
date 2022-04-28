@@ -50,6 +50,10 @@ static bool                     g_SwapChainRebuild = false;
 static std::vector<std::vector<VkCommandBuffer>> s_AllocatedCommandBuffers;
 static std::vector<std::vector<std::function<void()>>> s_ResourceFreeQueue;
 
+// Unlike g_MainWindowData.FrameIndex, this is not the the swapchain image index
+// and is always guaranteed to increase (eg. 0, 1, 2, 0, 1, 2)
+static uint32_t s_CurrentFrameIndex = 0;
+
 void check_vk_result(VkResult err)
 {
 	if (err == 0)
@@ -277,6 +281,8 @@ static void FrameRender(ImGui_ImplVulkanH_Window* wd, ImDrawData* draw_data)
 	}
 	check_vk_result(err);
 
+	s_CurrentFrameIndex = (s_CurrentFrameIndex + 1) % g_MainWindowData.ImageCount;
+
 	ImGui_ImplVulkanH_Frame* fd = &wd->Frames[wd->FrameIndex];
 	{
 		err = vkWaitForFences(g_Device, 1, &fd->Fence, VK_TRUE, UINT64_MAX);    // wait indefinitely instead of periodically checking
@@ -288,12 +294,13 @@ static void FrameRender(ImGui_ImplVulkanH_Window* wd, ImDrawData* draw_data)
 	
 	{
 		// Free resources in queue
-		for (auto& func : s_ResourceFreeQueue[wd->FrameIndex])
+		for (auto& func : s_ResourceFreeQueue[s_CurrentFrameIndex])
 			func();
-		s_ResourceFreeQueue[wd->FrameIndex].clear();
+		s_ResourceFreeQueue[s_CurrentFrameIndex].clear();
 	}
 	{
 		// Free command buffers allocated by Application::GetCommandBuffer
+		// These use g_MainWindowData.FrameIndex and not s_CurrentFrameIndex because they're tied to the swapchain image index
 		auto& allocatedCommandBuffers = s_AllocatedCommandBuffers[wd->FrameIndex];
 		if (allocatedCommandBuffers.size() > 0)
 		{
@@ -560,6 +567,11 @@ namespace Walnut {
 					ImGui_ImplVulkan_SetMinImageCount(g_MinImageCount);
 					ImGui_ImplVulkanH_CreateOrResizeWindow(g_Instance, g_PhysicalDevice, g_Device, &g_MainWindowData, g_QueueFamily, g_Allocator, width, height, g_MinImageCount);
 					g_MainWindowData.FrameIndex = 0;
+
+					// Clear allocated command buffers from here since entire pool is destroyed
+					s_AllocatedCommandBuffers.clear();
+					s_AllocatedCommandBuffers.resize(g_MainWindowData.ImageCount);
+
 					g_SwapChainRebuild = false;
 				}
 			}
@@ -727,8 +739,7 @@ namespace Walnut {
 
 	void Application::SubmitResourceFree(std::function<void()>&& func)
 	{
-		ImGui_ImplVulkanH_Window* wd = &g_MainWindowData;
-		s_ResourceFreeQueue[wd->FrameIndex].emplace_back(func);
+		s_ResourceFreeQueue[s_CurrentFrameIndex].emplace_back(func);
 	}
 
 }
