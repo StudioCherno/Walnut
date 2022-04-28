@@ -46,10 +46,9 @@ static ImGui_ImplVulkanH_Window g_MainWindowData;
 static int                      g_MinImageCount = 2;
 static bool                     g_SwapChainRebuild = false;
 
+// Per-frame-in-flight
 static std::vector<std::vector<VkCommandBuffer>> s_AllocatedCommandBuffers;
-
-// NOTE(Yan): does this need to be per-frame in flight for this simple case?
-static std::vector<std::function<void()>> s_ResourceFreeQueue;
+static std::vector<std::vector<std::function<void()>>> s_ResourceFreeQueue;
 
 void check_vk_result(VkResult err)
 {
@@ -289,9 +288,9 @@ static void FrameRender(ImGui_ImplVulkanH_Window* wd, ImDrawData* draw_data)
 	
 	{
 		// Free resources in queue
-		for (auto& func : s_ResourceFreeQueue)
+		for (auto& func : s_ResourceFreeQueue[wd->FrameIndex])
 			func();
-		s_ResourceFreeQueue.clear();
+		s_ResourceFreeQueue[wd->FrameIndex].clear();
 	}
 	{
 		// Free command buffers allocated by Application::GetCommandBuffer
@@ -421,6 +420,7 @@ namespace Walnut {
 		SetupVulkanWindow(wd, surface, w, h);
 
 		s_AllocatedCommandBuffers.resize(wd->ImageCount);
+		s_ResourceFreeQueue.resize(wd->ImageCount);
 
 		// Setup Dear ImGui context
 		IMGUI_CHECKVERSION();
@@ -512,8 +512,11 @@ namespace Walnut {
 		check_vk_result(err);
 
 		// Free resources in queue
-		for (auto& func : s_ResourceFreeQueue)
-			func();
+		for (auto& queue : s_ResourceFreeQueue)
+		{
+			for (auto& func : queue)
+				func();
+		}
 		s_ResourceFreeQueue.clear();
 
 		ImGui_ImplVulkan_Shutdown();
@@ -724,7 +727,8 @@ namespace Walnut {
 
 	void Application::SubmitResourceFree(std::function<void()>&& func)
 	{
-		s_ResourceFreeQueue.emplace_back(func);
+		ImGui_ImplVulkanH_Window* wd = &g_MainWindowData;
+		s_ResourceFreeQueue[wd->FrameIndex].emplace_back(func);
 	}
 
 }
