@@ -1,3 +1,4 @@
+#!/usr/bin/echo Download https://premake.github.io and run: "premake5 gmake2 && make". Best regards, 
 @echo off
 
 pushd ..
