@@ -43,6 +43,14 @@ namespace Walnut {
 		{
 			return glm::normalize(Vec3(-1.0f, 1.0f));
 		}
+
+		static glm::vec3 InUnitHemisphere(const glm::vec3& normal)
+		{
+			glm::vec3 inUnitSphere = InUnitSphere();
+			if (glm::dot(inUnitSphere, normal) > 0.0f)
+				return inUnitSphere;
+			else return -inUnitSphere;
+		}
 	private:
 		static std::mt19937 s_RandomEngine;
 		static std::uniform_int_distribution<std::mt19937::result_type> s_Distribution;
