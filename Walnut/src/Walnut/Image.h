@@ -24,10 +24,13 @@ namespace Walnut {
 
 		VkDescriptorSet GetDescriptorSet() const { return m_DescriptorSet; }
 
+		void Resize(uint32_t width, uint32_t height);
+
 		uint32_t GetWidth() const { return m_Width; }
 		uint32_t GetHeight() const { return m_Height; }
 	private:
 		void AllocateMemory(uint64_t size);
+		void Release();
 	private:
 		uint32_t m_Width = 0, m_Height = 0;
 
