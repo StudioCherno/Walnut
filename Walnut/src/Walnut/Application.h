@@ -21,6 +21,7 @@ namespace Walnut {
 		std::string Name = "Walnut App";
 		uint32_t Width = 1600;
 		uint32_t Height = 900;
+		bool ParentWindow = true;
 	};
 
 	class Application
