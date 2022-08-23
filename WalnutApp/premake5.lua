@@ -22,6 +22,14 @@ project "WalnutApp"
     {
         "Walnut"
     }
+    if string.find(_ACTION, "gmake") then
+       -- Premake5 is about to generate gmake or gmake2 build Makefiles, and
+       -- Makefile support is still new and it does not generate "links" for
+       -- the dependencies needed by Walnut. Add the Linux libs in this case:
+       if os.istarget("linux") then
+          links { "imgui", "glfw", "vulkan" }
+       end
+    end
 
    targetdir ("../bin/" .. outputdir .. "/%{prj.name}")
    objdir ("../bin-int/" .. outputdir .. "/%{prj.name}")
