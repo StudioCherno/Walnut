@@ -9,6 +9,8 @@ project "Walnut"
 
    includedirs
    {
+      "src",
+
       "../vendor/imgui",
       "../vendor/glfw/include",
       "../vendor/stb_image",
