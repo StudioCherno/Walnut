@@ -29,6 +29,8 @@ namespace Walnut {
 		Application(const ApplicationSpecification& applicationSpecification = ApplicationSpecification());
 		~Application();
 
+		static Application& Get();
+
 		void Run();
 		void SetMenubarCallback(const std::function<void()>& menubarCallback) { m_MenubarCallback = menubarCallback; }
 		
@@ -42,6 +44,9 @@ namespace Walnut {
 		void PushLayer(const std::shared_ptr<Layer>& layer) { m_LayerStack.emplace_back(layer); layer->OnAttach(); }
 
 		void Close();
+
+		float GetTime();
+		GLFWwindow* GetWindowHandle() const { return m_WindowHandle; }
 
 		static VkInstance GetInstance();
 		static VkPhysicalDevice GetPhysicalDevice();
@@ -58,6 +63,10 @@ namespace Walnut {
 		ApplicationSpecification m_Specification;
 		GLFWwindow* m_WindowHandle = nullptr;
 		bool m_Running = false;
+
+		float m_TimeStep = 0.0f;
+		float m_FrameTime = 0.0f;
+		float m_LastFrameTime = 0.0f;
 
 		std::vector<std::shared_ptr<Layer>> m_LayerStack;
 		std::function<void()> m_MenubarCallback;

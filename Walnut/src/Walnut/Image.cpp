@@ -81,18 +81,7 @@ namespace Walnut {
 
 	Image::~Image()
 	{
-		Application::SubmitResourceFree([sampler = m_Sampler, imageView = m_ImageView, image = m_Image,
-			memory = m_Memory, stagingBuffer = m_StagingBuffer, stagingBufferMemory = m_StagingBufferMemory]()
-		{
-			VkDevice device = Application::GetDevice();
-
-			vkDestroySampler(device, sampler, nullptr);
-			vkDestroyImageView(device, imageView, nullptr);
-			vkDestroyImage(device, image, nullptr);
-			vkFreeMemory(device, memory, nullptr);
-			vkDestroyBuffer(device, stagingBuffer, nullptr);
-			vkFreeMemory(device, stagingBufferMemory, nullptr);
-		});
+		Release();
 	}
 
 	void Image::AllocateMemory(uint64_t size)
@@ -166,6 +155,29 @@ namespace Walnut {
 
 		// Create the Descriptor Set:
 		m_DescriptorSet = (VkDescriptorSet)ImGui_ImplVulkan_AddTexture(m_Sampler, m_ImageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+	}
+
+	void Image::Release()
+	{
+		Application::SubmitResourceFree([sampler = m_Sampler, imageView = m_ImageView, image = m_Image,
+			memory = m_Memory, stagingBuffer = m_StagingBuffer, stagingBufferMemory = m_StagingBufferMemory]()
+		{
+			VkDevice device = Application::GetDevice();
+
+			vkDestroySampler(device, sampler, nullptr);
+			vkDestroyImageView(device, imageView, nullptr);
+			vkDestroyImage(device, image, nullptr);
+			vkFreeMemory(device, memory, nullptr);
+			vkDestroyBuffer(device, stagingBuffer, nullptr);
+			vkFreeMemory(device, stagingBufferMemory, nullptr);
+		});
+
+		m_Sampler = nullptr;
+		m_ImageView = nullptr;
+		m_Image = nullptr;
+		m_Memory = nullptr;
+		m_StagingBuffer = nullptr;
+		m_StagingBufferMemory = nullptr;
 	}
 
 	void Image::SetData(const void* data)
@@ -259,6 +271,20 @@ namespace Walnut {
 
 			Application::FlushCommandBuffer(command_buffer);
 		}
+	}
+
+	void Image::Resize(uint32_t width, uint32_t height)
+	{
+		if (m_Image && m_Width == width && m_Height == height)
+			return;
+
+		// TODO: max size?
+
+		m_Width = width;
+		m_Height = height;
+
+		Release();
+		AllocateMemory(m_Width * m_Height * Utils::BytesPerPixel(m_Format));
 	}
 
 }
