@@ -69,6 +69,7 @@ namespace Walnut {
 		
 		AllocateMemory(m_Width * m_Height * Utils::BytesPerPixel(m_Format));
 		SetData(data);
+		stbi_image_free(data);
 	}
 
 	Image::Image(uint32_t width, uint32_t height, ImageFormat format, const void* data)
