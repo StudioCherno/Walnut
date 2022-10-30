@@ -18,5 +18,8 @@ elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
 endif()
 
 target_link_libraries(Walnut PUBLIC imgui glfw glm::glm stb_image Vulkan::Vulkan)
+if(WIN32)
+    target_link_libraries(Walnut PUBLIC dwmapi)
+endif()
 
 install(TARGETS Walnut DESTINATION bin)
