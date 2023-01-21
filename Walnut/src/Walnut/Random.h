@@ -45,7 +45,7 @@ namespace Walnut {
 		}
 	private:
 		thread_local static std::mt19937 s_RandomEngine;
-		thread_local static std::uniform_int_distribution<std::mt19937::result_type> s_Distribution;
+		static std::uniform_int_distribution<std::mt19937::result_type> s_Distribution;
 	};
 
 }
