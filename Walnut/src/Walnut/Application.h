@@ -6,6 +6,8 @@
 #include <vector>
 #include <memory>
 #include <functional>
+#include <stdio.h>
+#include <thread>
 
 #include "imgui.h"
 #include "vulkan/vulkan.h"
