@@ -44,6 +44,7 @@ namespace Walnut {
 		void PushLayer(const std::shared_ptr<Layer>& layer) { m_LayerStack.emplace_back(layer); layer->OnAttach(); }
 
 		void Close();
+		void Restart();
 
 		float GetTime();
 		GLFWwindow* GetWindowHandle() const { return m_WindowHandle; }
@@ -63,6 +64,7 @@ namespace Walnut {
 		ApplicationSpecification m_Specification;
 		GLFWwindow* m_WindowHandle = nullptr;
 		bool m_Running = false;
+		bool m_WantsRestart = false;
 
 		float m_TimeStep = 0.0f;
 		float m_FrameTime = 0.0f;

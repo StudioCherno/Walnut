@@ -548,7 +548,10 @@ namespace Walnut {
 		glfwDestroyWindow(m_WindowHandle);
 		glfwTerminate();
 
-		g_ApplicationRunning = false;
+		if (m_WantsRestart)
+			m_WantsRestart = false;
+		else
+			g_ApplicationRunning = false;
 	}
 
 	void Application::Run()
@@ -686,6 +689,12 @@ namespace Walnut {
 	void Application::Close()
 	{
 		m_Running = false;
+	}
+
+	void Application::Restart()
+	{
+		m_Running = false;
+		m_WantsRestart = true;
 	}
 
 	float Application::GetTime()

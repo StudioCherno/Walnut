@@ -31,6 +31,10 @@ Walnut::Application* Walnut::CreateApplication(int argc, char** argv)
 			{
 				app->Close();
 			}
+			if (ImGui::MenuItem("Restart"))
+			{
+				app->Restart();
+			}
 			ImGui::EndMenu();
 		}
 	});
