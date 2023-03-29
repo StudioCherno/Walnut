@@ -15,3 +15,6 @@
 [submodule "vendor/GLFW"]
 	path = vendor/GLFW
 	url = https://github.com/TheCherno/GLFW
+[submodule "VulkanSDK-Headers-And-Libs"]
+	path = VulkanSDK-Headers-And-Libs
+	url = https://github.com/TheRamBucket/VulkanSDK-Headers-And-Libs.git
