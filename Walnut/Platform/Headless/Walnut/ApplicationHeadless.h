@@ -1,18 +1,12 @@
 #pragma once
 
-#include "Layer.h"
+#include "Walnut/Layer.h"
+#include "Walnut/Timer.h"
 
 #include <string>
 #include <vector>
 #include <memory>
 #include <functional>
-
-#include "imgui.h"
-#include "vulkan/vulkan.h"
-
-void check_vk_result(VkResult err);
-
-struct GLFWwindow;
 
 namespace Walnut {
 
@@ -21,6 +15,8 @@ namespace Walnut {
 		std::string Name = "Walnut App";
 		uint32_t Width = 1600;
 		uint32_t Height = 900;
+
+		uint64_t SleepDuration = 0;
 	};
 
 	class Application
@@ -32,7 +28,9 @@ namespace Walnut {
 		static Application& Get();
 
 		void Run();
-		void SetMenubarCallback(const std::function<void()>& menubarCallback) { m_MenubarCallback = menubarCallback; }
+
+		// No menubar for headless apps
+		void SetMenubarCallback(const std::function<void()>& menubarCallback) {}
 		
 		template<typename T>
 		void PushLayer()
@@ -46,22 +44,11 @@ namespace Walnut {
 		void Close();
 
 		float GetTime();
-		GLFWwindow* GetWindowHandle() const { return m_WindowHandle; }
-
-		static VkInstance GetInstance();
-		static VkPhysicalDevice GetPhysicalDevice();
-		static VkDevice GetDevice();
-
-		static VkCommandBuffer GetCommandBuffer(bool begin);
-		static void FlushCommandBuffer(VkCommandBuffer commandBuffer);
-
-		static void SubmitResourceFree(std::function<void()>&& func);
 	private:
 		void Init();
 		void Shutdown();
 	private:
 		ApplicationSpecification m_Specification;
-		GLFWwindow* m_WindowHandle = nullptr;
 		bool m_Running = false;
 
 		float m_TimeStep = 0.0f;
@@ -69,7 +56,7 @@ namespace Walnut {
 		float m_LastFrameTime = 0.0f;
 
 		std::vector<std::shared_ptr<Layer>> m_LayerStack;
-		std::function<void()> m_MenubarCallback;
+		Timer m_AppTimer;
 	};
 
 	// Implemented by CLIENT

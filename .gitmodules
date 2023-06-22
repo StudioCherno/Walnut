@@ -15,3 +15,9 @@
 [submodule "vendor/GLFW"]
 	path = vendor/GLFW
 	url = https://github.com/TheCherno/GLFW
+[submodule "vendor/spdlog"]
+	path = vendor/spdlog
+	url = https://github.com/gabime/spdlog
+[submodule "vendor\\yaml-cpp"]
+	path = vendor\\yaml-cpp
+	url = https://github.com/jbeder/yaml-cpp

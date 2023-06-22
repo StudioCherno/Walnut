@@ -1,4 +1,6 @@
-#include "Application.h"
+#include "ApplicationGUI.h"
+
+#include "Walnut/Core/Log.h"
 
 //
 // Adapted from Dear ImGui Vulkan example
@@ -14,10 +16,14 @@
 #include <vulkan/vulkan.h>
 #include <glm/glm.hpp>
 
+#include "ImGui/ImGuiTheme.h"
+
 #include <iostream>
 
 // Emedded font
 #include "ImGui/Roboto-Regular.embed"
+#include "ImGui/Roboto-Bold.embed"
+#include "ImGui/Roboto-Italic.embed"
 
 extern bool g_ApplicationRunning;
 
@@ -55,6 +61,8 @@ static std::vector<std::vector<std::function<void()>>> s_ResourceFreeQueue;
 // and is always guaranteed to increase (eg. 0, 1, 2, 0, 1, 2)
 static uint32_t s_CurrentFrameIndex = 0;
 
+static std::unordered_map<std::string, ImFont*> s_Fonts;
+
 static Walnut::Application* s_Instance = nullptr;
 
 void check_vk_result(VkResult err)
@@ -70,7 +78,7 @@ void check_vk_result(VkResult err)
 static VKAPI_ATTR VkBool32 VKAPI_CALL debug_report(VkDebugReportFlagsEXT flags, VkDebugReportObjectTypeEXT objectType, uint64_t object, size_t location, int32_t messageCode, const char* pLayerPrefix, const char* pMessage, void* pUserData)
 {
 	(void)flags; (void)object; (void)location; (void)messageCode; (void)pUserData; (void)pLayerPrefix; // Unused arguments
-	fprintf(stderr, "[vulkan] Debug report from ObjectType: %i\nMessage: %s\n\n", objectType, pMessage);
+//	fprintf(stderr, "[vulkan] Debug report from ObjectType: %i\nMessage: %s\n\n", objectType, pMessage);
 	return VK_FALSE;
 }
 #endif // IMGUI_VULKAN_DEBUG_REPORT
@@ -406,6 +414,9 @@ namespace Walnut {
 
 	void Application::Init()
 	{
+		// Intialize logging
+		Log::Init();
+
 		// Setup GLFW window
 		glfwSetErrorCallback(glfw_error_callback);
 		if (!glfwInit())
@@ -452,12 +463,20 @@ namespace Walnut {
 		//io.ConfigViewportsNoAutoMerge = true;
 		//io.ConfigViewportsNoTaskBarIcon = true;
 
-		// Setup Dear ImGui style
-		ImGui::StyleColorsDark();
-		//ImGui::StyleColorsClassic();
+		// Theme colors
+		UI::SetHazelTheme();
+
+		// Style
+		ImGuiStyle& style = ImGui::GetStyle();
+		style.WindowPadding = ImVec2(10.0f, 10.0f);
+		style.FramePadding = ImVec2(8.0f, 6.0f);
+		style.ItemSpacing = ImVec2(6.0f, 6.0f);
+		style.ChildRounding = 6.0f;
+		style.PopupRounding = 6.0f;
+		style.FrameRounding = 6.0f;
+		style.WindowTitleAlign = ImVec2(0.5f, 0.5f);
 
 		// When viewports are enabled we tweak WindowRounding/WindowBg so platform windows can look identical to regular ones.
-		ImGuiStyle& style = ImGui::GetStyle();
 		if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
 		{
 			style.WindowRounding = 0.0f;
@@ -486,6 +505,9 @@ namespace Walnut {
 		ImFontConfig fontConfig;
 		fontConfig.FontDataOwnedByAtlas = false;
 		ImFont* robotoFont = io.Fonts->AddFontFromMemoryTTF((void*)g_RobotoRegular, sizeof(g_RobotoRegular), 20.0f, &fontConfig);
+		s_Fonts["Default"] = robotoFont;
+		s_Fonts["Bold"] = io.Fonts->AddFontFromMemoryTTF((void*)g_RobotoBold, sizeof(g_RobotoBold), 20.0f, &fontConfig);
+		s_Fonts["Italic"] = io.Fonts->AddFontFromMemoryTTF((void*)g_RobotoItalic, sizeof(g_RobotoItalic), 20.0f, &fontConfig);
 		io.FontDefault = robotoFont;
 
 		// Upload Fonts
@@ -549,6 +571,8 @@ namespace Walnut {
 		glfwTerminate();
 
 		g_ApplicationRunning = false;
+
+		Log::Shutdown();
 	}
 
 	void Application::Run()
@@ -765,6 +789,14 @@ namespace Walnut {
 	void Application::SubmitResourceFree(std::function<void()>&& func)
 	{
 		s_ResourceFreeQueue[s_CurrentFrameIndex].emplace_back(func);
+	}
+
+	ImFont* Application::GetFont(const std::string& name)
+	{
+		if (!s_Fonts.contains(name))
+			return nullptr;
+
+		return s_Fonts.at(name);
 	}
 
 }

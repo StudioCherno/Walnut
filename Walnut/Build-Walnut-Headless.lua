@@ -1,40 +1,46 @@
-project "Walnut"
+project "Walnut-Headless"
    kind "StaticLib"
    language "C++"
-   cppdialect "C++17"
+   cppdialect "C++20"
    targetdir "bin/%{cfg.buildcfg}"
    staticruntime "off"
 
-   files { "src/**.h", "src/**.cpp" }
+   files
+   {
+       "Source/**.h",
+       "Source/**.cpp",
+
+       "Platform/Headless/**.h",
+       "Platform/Headless/**.cpp",
+   }
 
    includedirs
    {
-      "src",
+      "Source",
+      "Platform/Headless",
 
-      "../vendor/imgui",
-      "../vendor/glfw/include",
-      "../vendor/stb_image",
-
-      "%{IncludeDir.VulkanSDK}",
       "%{IncludeDir.glm}",
+      "%{IncludeDir.spdlog}",
    }
 
    links
    {
-       "ImGui",
-       "GLFW",
-
-       "%{Library.Vulkan}",
    }
 
-   targetdir ("bin/" .. outputdir .. "/%{prj.name}")
+   defines { "WL_HEADLESS" }
+
+   targetdir ("../bin/" .. outputdir .. "/%{prj.name}")
    objdir ("../bin-int/" .. outputdir .. "/%{prj.name}")
 
    filter "system:windows"
       systemversion "latest"
       defines { "WL_PLATFORM_WINDOWS" }
 
-   filter "configurations:Debug"
+   filter "system:linux"
+      systemversion "latest"
+      defines { "WL_PLATFORM_LINUX" }
+
+      filter "configurations:Debug"
       defines { "WL_DEBUG" }
       runtime "Debug"
       symbols "On"

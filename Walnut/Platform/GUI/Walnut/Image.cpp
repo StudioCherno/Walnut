@@ -3,7 +3,7 @@
 #include "imgui.h"
 #include "backends/imgui_impl_vulkan.h"
 
-#include "Application.h"
+#include "ApplicationGUI.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
