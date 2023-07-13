@@ -12,7 +12,8 @@ project "WalnutApp"
       "../vendor/imgui",
       "../vendor/glfw/include",
 
-      "../Walnut/src",
+      "../Walnut/Source",
+      "../Walnut/Platform/GUI",
 
       "%{IncludeDir.VulkanSDK}",
       "%{IncludeDir.glm}",

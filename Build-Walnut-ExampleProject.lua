@@ -11,4 +11,4 @@ workspace "WalnutApp"
 outputdir = "%{cfg.buildcfg}-%{cfg.system}-%{cfg.architecture}"
 
 include "Build-Walnut-External.lua"
-include "WalnutApp"
+include "WalnutApp/Build-Walnut-App.lua"
