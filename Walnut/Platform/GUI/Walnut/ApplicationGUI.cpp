@@ -18,6 +18,8 @@
 
 #include "ImGui/ImGuiTheme.h"
 
+#include "stb_image.h"
+
 #include <iostream>
 
 // Emedded font
@@ -434,6 +436,18 @@ namespace Walnut {
 			std::cerr << "GLFW: Vulkan not supported!\n";
 			return;
 		}
+		
+		// Set icon
+		GLFWimage icon;
+		int channels;
+		if (!m_Specification.IconPath.empty())
+		{
+			std::string iconPathStr = m_Specification.IconPath.string();
+			icon.pixels = stbi_load(iconPathStr.c_str(), &icon.width, &icon.height, &channels, 4);
+			glfwSetWindowIcon(m_WindowHandle, 1, &icon);
+			stbi_image_free(icon.pixels);
+		}
+
 		uint32_t extensions_count = 0;
 		const char** extensions = glfwGetRequiredInstanceExtensions(&extensions_count);
 		SetupVulkan(extensions, extensions_count);

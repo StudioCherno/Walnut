@@ -6,6 +6,7 @@
 #include <vector>
 #include <memory>
 #include <functional>
+#include <filesystem>
 
 #include "imgui.h"
 #include "vulkan/vulkan.h"
@@ -21,6 +22,8 @@ namespace Walnut {
 		std::string Name = "Walnut App";
 		uint32_t Width = 1600;
 		uint32_t Height = 900;
+
+		std::filesystem::path IconPath;
 	};
 
 	class Application
