@@ -741,6 +741,15 @@ namespace Walnut {
 			ImGui::ResumeLayout();
 		}
 
+		{
+			// Centered Window title
+			ImVec2 currentCursorPos = ImGui::GetCursorPos();
+			ImVec2 textSize = ImGui::CalcTextSize(m_Specification.Name.c_str());
+			ImGui::SetCursorPos(ImVec2(ImGui::GetWindowWidth() * 0.5f - textSize.x * 0.5f, 2.0f + windowPadding.y + 6.0f));
+			ImGui::Text("%s", m_Specification.Name.c_str()); // Draw title
+			ImGui::SetCursorPos(currentCursorPos);
+		}
+
 		// Window buttons
 		const ImU32 buttonColN = UI::Colors::ColorWithMultipliedValue(UI::Colors::Theme::text, 0.9f);
 		const ImU32 buttonColH = UI::Colors::ColorWithMultipliedValue(UI::Colors::Theme::text, 1.2f);
