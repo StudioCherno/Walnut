@@ -909,14 +909,16 @@ namespace Walnut {
 				ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
 				window_flags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove;
 				window_flags |= ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
+				if (!m_Specification.CustomTitlebar && m_MenubarCallback)
+					window_flags |= ImGuiWindowFlags_MenuBar;
 
-				bool isMaximized = (bool)glfwGetWindowAttrib(m_WindowHandle, GLFW_MAXIMIZED);
+				const bool isMaximized = IsMaximized();
 
 				ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, isMaximized ? ImVec2(6.0f, 6.0f) : ImVec2(1.0f, 1.0f));
 				ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 3.0f);
 
 				ImGui::PushStyleColor(ImGuiCol_MenuBarBg, ImVec4{ 0.0f, 0.0f, 0.0f, 0.0f });
-				ImGui::Begin("DockSpace Demo", nullptr, window_flags);
+				ImGui::Begin("DockSpaceWindow", nullptr, window_flags);
 				ImGui::PopStyleColor(); // MenuBarBg
 				ImGui::PopStyleVar(2);
 
@@ -930,7 +932,6 @@ namespace Walnut {
 
 					ImGui::PopStyleColor(); // ImGuiCol_Border
 				}
-
 				
 				if (m_Specification.CustomTitlebar)
 				{
