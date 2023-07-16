@@ -1,13 +1,17 @@
 #include "ApplicationGUI.h"
 
+#include "Walnut/UI/UI.h"
 #include "Walnut/Core/Log.h"
 
 //
 // Adapted from Dear ImGui Vulkan example
 //
 
+#include "imgui_internal.h"
+
 #include "backends/imgui_impl_glfw.h"
 #include "backends/imgui_impl_vulkan.h"
+
 #include <stdio.h>          // printf, fprintf
 #include <stdlib.h>         // abort
 #define GLFW_INCLUDE_NONE
@@ -394,6 +398,9 @@ static void glfw_error_callback(int error, const char* description)
 
 namespace Walnut {
 
+#include "Walnut/Embed/Walnut-Icon.embed"
+#include "Walnut/Embed/WindowImages.embed"
+
 	Application::Application(const ApplicationSpecification& specification)
 		: m_Specification(specification)
 	{
@@ -428,7 +435,36 @@ namespace Walnut {
 		}
 
 		glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+
+		if (m_Specification.CustomTitlebar)
+		{
+			glfwWindowHint(GLFW_TITLEBAR, false);
+
+			// NOTE(Yan): Undecorated windows are probably
+			//            also desired, so make this an option
+			// glfwWindowHint(GLFW_DECORATED, false);
+		}
+
+		GLFWmonitor* primaryMonitor = glfwGetPrimaryMonitor();
+		const GLFWvidmode* videoMode = glfwGetVideoMode(primaryMonitor);
+
+		int monitorX, monitorY;
+		glfwGetMonitorPos(primaryMonitor, &monitorX, &monitorY);
+
+		glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
+
 		m_WindowHandle = glfwCreateWindow(m_Specification.Width, m_Specification.Height, m_Specification.Name.c_str(), NULL, NULL);
+
+		if (m_Specification.CenterWindow)
+		{
+			glfwSetWindowPos(m_WindowHandle,
+				monitorX + (videoMode->width - m_Specification.Width) / 2,
+				monitorY + (videoMode->height - m_Specification.Height) / 2);
+
+			glfwSetWindowAttrib(m_WindowHandle, GLFW_RESIZABLE, m_Specification.WindowResizeable ? GLFW_TRUE : GLFW_FALSE);
+		}
+		
+		glfwShowWindow(m_WindowHandle);
 
 		// Setup Vulkan
 		if (!glfwVulkanSupported())
@@ -447,6 +483,13 @@ namespace Walnut {
 			glfwSetWindowIcon(m_WindowHandle, 1, &icon);
 			stbi_image_free(icon.pixels);
 		}
+
+		glfwSetWindowUserPointer(m_WindowHandle, this);
+		glfwSetTitlebarHitTestCallback(m_WindowHandle, [](GLFWwindow* window, int x, int y, int* hit)
+		{
+			Application* app = (Application*)glfwGetWindowUserPointer(window);
+			*hit = app->IsTitleBarHovered();
+		});
 
 		uint32_t extensions_count = 0;
 		const char** extensions = glfwGetRequiredInstanceExtensions(&extensions_count);
@@ -553,6 +596,39 @@ namespace Walnut {
 			check_vk_result(err);
 			ImGui_ImplVulkan_DestroyFontUploadObjects();
 		}
+
+		// Load images
+		{
+			uint32_t w, h;
+			void* data = Image::Decode(g_WalnutIcon, sizeof(g_WalnutIcon), w, h);
+			m_AppHeaderIcon = std::make_shared<Walnut::Image>(w, h, ImageFormat::RGBA, data);
+			free(data);
+		}
+		{
+			uint32_t w, h;
+			void* data = Image::Decode(g_WindowMinimizeIcon, sizeof(g_WindowMinimizeIcon), w, h);
+			m_IconMinimize = std::make_shared<Walnut::Image>(w, h, ImageFormat::RGBA, data);
+			free(data);
+		}
+		{
+			uint32_t w, h;
+			void* data = Image::Decode(g_WindowMaximizeIcon, sizeof(g_WindowMaximizeIcon), w, h);
+			m_IconMaximize = std::make_shared<Walnut::Image>(w, h, ImageFormat::RGBA, data);
+			free(data);
+		}
+		{
+			uint32_t w, h;
+			void* data = Image::Decode(g_WindowRestoreIcon, sizeof(g_WindowRestoreIcon), w, h);
+			m_IconRestore = std::make_shared<Walnut::Image>(w, h, ImageFormat::RGBA, data);
+			free(data);
+		}
+		{
+			uint32_t w, h;
+			void* data = Image::Decode(g_WindowCloseIcon, sizeof(g_WindowCloseIcon), w, h);
+			m_IconClose = std::make_shared<Walnut::Image>(w, h, ImageFormat::RGBA, data);
+			free(data);
+		}
+
 	}
 
 	void Application::Shutdown()
@@ -561,6 +637,15 @@ namespace Walnut {
 			layer->OnDetach();
 
 		m_LayerStack.clear();
+
+		// Release resources
+		// NOTE(Yan): to avoid doing this manually, we shouldn't
+		//            store resources in this Application class
+		m_AppHeaderIcon.reset();
+		m_IconClose.reset();
+		m_IconMinimize.reset();
+		m_IconMaximize.reset();
+		m_IconRestore.reset();
 
 		// Cleanup
 		VkResult err = vkDeviceWaitIdle(g_Device);
@@ -589,6 +674,171 @@ namespace Walnut {
 		Log::Shutdown();
 	}
 
+	void Application::UI_DrawTitlebar(float& outTitlebarHeight)
+	{
+		const float titlebarHeight = 58.0f;
+		const bool isMaximized = IsMaximized();
+		float titlebarVerticalOffset = isMaximized ? -6.0f : 0.0f;
+		const ImVec2 windowPadding = ImGui::GetCurrentWindow()->WindowPadding;
+
+		ImGui::SetCursorPos(ImVec2(windowPadding.x, windowPadding.y + titlebarVerticalOffset));
+		const ImVec2 titlebarMin = ImGui::GetCursorScreenPos();
+		const ImVec2 titlebarMax = { ImGui::GetCursorScreenPos().x + ImGui::GetWindowWidth() - windowPadding.y * 2.0f,
+									 ImGui::GetCursorScreenPos().y + titlebarHeight };
+		auto* bgDrawList = ImGui::GetBackgroundDrawList();
+		auto* fgDrawList = ImGui::GetForegroundDrawList();
+		bgDrawList->AddRectFilled(titlebarMin, titlebarMax, UI::Colors::Theme::titlebar);
+		// DEBUG TITLEBAR BOUNDS
+		// fgDrawList->AddRect(titlebarMin, titlebarMax, UI::Colors::Theme::invalidPrefab);
+
+		// Logo
+		{
+			const int logoWidth = 48;// m_LogoTex->GetWidth();
+			const int logoHeight = 48;// m_LogoTex->GetHeight();
+			const ImVec2 logoOffset(16.0f + windowPadding.x, 5.0f + windowPadding.y + titlebarVerticalOffset);
+			const ImVec2 logoRectStart = { ImGui::GetItemRectMin().x + logoOffset.x, ImGui::GetItemRectMin().y + logoOffset.y };
+			const ImVec2 logoRectMax = { logoRectStart.x + logoWidth, logoRectStart.y + logoHeight };
+			fgDrawList->AddImage(m_AppHeaderIcon->GetDescriptorSet(), logoRectStart, logoRectMax);
+		}
+
+		ImGui::BeginHorizontal("Titlebar", { ImGui::GetWindowWidth() - windowPadding.y * 2.0f, ImGui::GetFrameHeightWithSpacing() });
+
+		static float moveOffsetX;
+		static float moveOffsetY;
+		const float w = ImGui::GetContentRegionAvail().x;
+		const float buttonsAreaWidth = 94;
+
+		// Title bar drag area
+		// On Windows we hook into the GLFW win32 window internals
+		ImGui::SetCursorPos(ImVec2(windowPadding.x, windowPadding.y + titlebarVerticalOffset)); // Reset cursor pos
+		// DEBUG DRAG BOUNDS
+		// fgDrawList->AddRect(ImGui::GetCursorScreenPos(), ImVec2(ImGui::GetCursorScreenPos().x + w - buttonsAreaWidth, ImGui::GetCursorScreenPos().y + titlebarHeight), UI::Colors::Theme::invalidPrefab);
+		ImGui::InvisibleButton("##titleBarDragZone", ImVec2(w - buttonsAreaWidth, titlebarHeight));
+
+		m_TitleBarHovered = ImGui::IsItemHovered();
+
+		if (isMaximized)
+		{
+			float windowMousePosY = ImGui::GetMousePos().y - ImGui::GetCursorScreenPos().y;
+			if (windowMousePosY >= 0.0f && windowMousePosY <= 5.0f)
+				m_TitleBarHovered = true; // Account for the top-most pixels which don't register
+		}
+
+		// Draw Menubar
+		if (m_MenubarCallback)
+		{
+			ImGui::SuspendLayout();
+			{
+				ImGui::SetItemAllowOverlap();
+				const float logoHorizontalOffset = 16.0f * 2.0f + 48.0f + windowPadding.x;
+				ImGui::SetCursorPos(ImVec2(logoHorizontalOffset, 6.0f + titlebarVerticalOffset));
+				UI_DrawMenubar();
+
+				if (ImGui::IsItemHovered())
+					m_TitleBarHovered = false;
+			}
+
+			ImGui::ResumeLayout();
+		}
+
+		// Window buttons
+		const ImU32 buttonColN = UI::Colors::ColorWithMultipliedValue(UI::Colors::Theme::text, 0.9f);
+		const ImU32 buttonColH = UI::Colors::ColorWithMultipliedValue(UI::Colors::Theme::text, 1.2f);
+		const ImU32 buttonColP = UI::Colors::Theme::textDarker;
+		const float buttonWidth = 14.0f;
+		const float buttonHeight = 14.0f;
+
+		// Minimize Button
+
+		ImGui::Spring();
+		UI::ShiftCursorY(8.0f);
+		{
+			const int iconWidth = m_IconMinimize->GetWidth();
+			const int iconHeight = m_IconMinimize->GetHeight();
+			const float padY = (buttonHeight - (float)iconHeight) / 2.0f;
+			if (ImGui::InvisibleButton("Minimize", ImVec2(buttonWidth, buttonHeight)))
+			{
+				// TODO: move this stuff to a better place, like Window class
+				if (m_WindowHandle)
+				{
+					Application::Get().QueueEvent([windowHandle = m_WindowHandle]() { glfwIconifyWindow(windowHandle); });
+				}
+			}
+
+			UI::DrawButtonImage(m_IconMinimize, buttonColN, buttonColH, buttonColP, UI::RectExpanded(UI::GetItemRect(), 0.0f, -padY));
+		}
+
+
+		// Maximize Button
+		ImGui::Spring(-1.0f, 17.0f);
+		UI::ShiftCursorY(8.0f);
+		{
+			const int iconWidth = m_IconMaximize->GetWidth();
+			const int iconHeight = m_IconMaximize->GetHeight();
+
+			const bool isMaximized = IsMaximized();
+
+			if (ImGui::InvisibleButton("Maximize", ImVec2(buttonWidth, buttonHeight)))
+			{
+				Application::Get().QueueEvent([isMaximized, windowHandle = m_WindowHandle]()
+				{
+					if (isMaximized)
+						glfwRestoreWindow(windowHandle);
+					else
+						glfwMaximizeWindow(windowHandle);
+				});
+			}
+
+			UI::DrawButtonImage(isMaximized ? m_IconRestore : m_IconMaximize, buttonColN, buttonColH, buttonColP);
+		}
+
+		// Close Button
+		ImGui::Spring(-1.0f, 15.0f);
+		UI::ShiftCursorY(8.0f);
+		{
+			const int iconWidth = m_IconClose->GetWidth();
+			const int iconHeight = m_IconClose->GetHeight();
+			if (ImGui::InvisibleButton("Close", ImVec2(buttonWidth, buttonHeight)))
+				Application::Get().Close();
+
+			UI::DrawButtonImage(m_IconClose, UI::Colors::Theme::text, UI::Colors::ColorWithMultipliedValue(UI::Colors::Theme::text, 1.4f), buttonColP);
+		}
+
+		ImGui::Spring(-1.0f, 18.0f);
+		ImGui::EndHorizontal();
+
+		outTitlebarHeight = titlebarHeight;
+	}
+
+	void Application::UI_DrawMenubar()
+	{
+		if (!m_MenubarCallback)
+			return;
+
+		if (m_Specification.CustomTitlebar)
+		{
+			const ImRect menuBarRect = { ImGui::GetCursorPos(), { ImGui::GetContentRegionAvail().x + ImGui::GetCursorScreenPos().x, ImGui::GetFrameHeightWithSpacing() } };
+
+			ImGui::BeginGroup();
+			if (UI::BeginMenubar(menuBarRect))
+			{
+				m_MenubarCallback();
+			}
+
+			UI::EndMenubar();
+			ImGui::EndGroup();
+
+		}
+		else
+		{
+			if (ImGui::BeginMenuBar())
+			{
+				m_MenubarCallback();
+				ImGui::EndMenuBar();
+			}
+		}
+	}
+
 	void Application::Run()
 	{
 		m_Running = true;
@@ -606,6 +856,18 @@ namespace Walnut {
 			// - When io.WantCaptureKeyboard is true, do not dispatch keyboard input data to your main application.
 			// Generally you may always pass all inputs to dear imgui, and hide them from your application based on those two flags.
 			glfwPollEvents();
+
+			{
+				std::scoped_lock<std::mutex> lock(m_EventQueueMutex);
+
+				// Process custom event queue
+				while (m_EventQueue.size() > 0)
+				{
+					auto& func = m_EventQueue.front();
+					func();
+					m_EventQueue.pop();
+				}
+			}
 
 			for (auto& layer : m_LayerStack)
 				layer->OnUpdate(m_TimeStep);
@@ -635,55 +897,59 @@ namespace Walnut {
 			ImGui::NewFrame();
 
 			{
-				static ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_None;
-
 				// We are using the ImGuiWindowFlags_NoDocking flag to make the parent window not dockable into,
 				// because it would be confusing to have two docking targets within each others.
 				ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoDocking;
-				if (m_MenubarCallback)
-					window_flags |= ImGuiWindowFlags_MenuBar;
 
-				const ImGuiViewport* viewport = ImGui::GetMainViewport();
-				ImGui::SetNextWindowPos(viewport->WorkPos);
-				ImGui::SetNextWindowSize(viewport->WorkSize);
+				ImGuiViewport* viewport = ImGui::GetMainViewport();
+				ImGui::SetNextWindowPos(viewport->Pos);
+				ImGui::SetNextWindowSize(viewport->Size);
 				ImGui::SetNextWindowViewport(viewport->ID);
 				ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
 				ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
 				window_flags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove;
 				window_flags |= ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
 
-				// When using ImGuiDockNodeFlags_PassthruCentralNode, DockSpace() will render our background
-				// and handle the pass-thru hole, so we ask Begin() to not render a background.
-				if (dockspace_flags & ImGuiDockNodeFlags_PassthruCentralNode)
-					window_flags |= ImGuiWindowFlags_NoBackground;
+				bool isMaximized = (bool)glfwGetWindowAttrib(m_WindowHandle, GLFW_MAXIMIZED);
 
-				// Important: note that we proceed even if Begin() returns false (aka window is collapsed).
-				// This is because we want to keep our DockSpace() active. If a DockSpace() is inactive,
-				// all active windows docked into it will lose their parent and become undocked.
-				// We cannot preserve the docking relationship between an active window and an inactive docking, otherwise
-				// any change of dockspace/settings would lead to windows being stuck in limbo and never being visible.
-				ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+				ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, isMaximized ? ImVec2(6.0f, 6.0f) : ImVec2(1.0f, 1.0f));
+				ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 3.0f);
+
+				ImGui::PushStyleColor(ImGuiCol_MenuBarBg, ImVec4{ 0.0f, 0.0f, 0.0f, 0.0f });
 				ImGui::Begin("DockSpace Demo", nullptr, window_flags);
-				ImGui::PopStyleVar();
+				ImGui::PopStyleColor(); // MenuBarBg
+				ImGui::PopStyleVar(2);
 
 				ImGui::PopStyleVar(2);
 
-				// Submit the DockSpace
-				ImGuiIO& io = ImGui::GetIO();
-				if (io.ConfigFlags & ImGuiConfigFlags_DockingEnable)
 				{
-					ImGuiID dockspace_id = ImGui::GetID("VulkanAppDockspace");
-					ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), dockspace_flags);
+					ImGui::PushStyleColor(ImGuiCol_Border, IM_COL32(50, 50, 50, 255));
+					// Draw window border if the window is not maximized
+					if (!isMaximized)
+						UI::RenderWindowOuterBorders(ImGui::GetCurrentWindow());
+
+					ImGui::PopStyleColor(); // ImGuiCol_Border
 				}
 
-				if (m_MenubarCallback)
+				
+				if (m_Specification.CustomTitlebar)
 				{
-					if (ImGui::BeginMenuBar())
-					{
-						m_MenubarCallback();
-						ImGui::EndMenuBar();
-					}
+					float titleBarHeight;
+					UI_DrawTitlebar(titleBarHeight);
+					ImGui::SetCursorPosY(titleBarHeight);
+
 				}
+
+				// Dockspace
+				ImGuiIO& io = ImGui::GetIO();
+				ImGuiStyle& style = ImGui::GetStyle();
+				float minWinSizeX = style.WindowMinSize.x;
+				style.WindowMinSize.x = 370.0f;
+				ImGui::DockSpace(ImGui::GetID("MyDockspace"));
+				style.WindowMinSize.x = minWinSizeX;
+
+				if (!m_Specification.CustomTitlebar)
+					UI_DrawMenubar();
 
 				for (auto& layer : m_LayerStack)
 					layer->OnUIRender();
@@ -724,6 +990,11 @@ namespace Walnut {
 	void Application::Close()
 	{
 		m_Running = false;
+	}
+
+	bool Application::IsMaximized() const
+	{
+		return (bool)glfwGetWindowAttrib(m_WindowHandle, GLFW_MAXIMIZED);
 	}
 
 	float Application::GetTime()

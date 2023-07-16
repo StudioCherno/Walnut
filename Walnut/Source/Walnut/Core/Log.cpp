@@ -14,6 +14,9 @@ namespace Walnut {
 
 	void Log::Init()
 	{
+		// NOTE(Yan): disabled for now because logging macros need some work
+
+		return;
 		// Create "logs" directory if doesn't exist
 		std::string logsDirectory = "logs";
 		if (!std::filesystem::exists(logsDirectory))
