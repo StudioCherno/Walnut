@@ -988,6 +988,8 @@ namespace Walnut {
 			// Present Main Platform Window
 			if (!main_is_minimized)
 				FramePresent(wd);
+			else
+				std::this_thread::sleep_for(std::chrono::milliseconds(5));
 
 			float time = GetTime();
 			m_FrameTime = time - m_LastFrameTime;
