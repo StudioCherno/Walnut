@@ -23,7 +23,7 @@ namespace Walnut {
 
 		static void SetCursorMode(CursorMode mode);
 
-		static std::unordered_map<int, std::function<void()>> KEY_CALLBACK_MAP;
+		static std::unordered_map<int, std::function<void()>> s_KeyCallbackMap;
 	};
 
 }
