@@ -13,7 +13,7 @@ namespace Walnut {
 	public:
 		static void InitKeysCallBack();
 
-		static void SetKeyCallback(KeyCode keycode, std::function<void()>& func);
+		static void SetKeyCallback(KeyCode keycode, std::function<void()> func);
 
 		static bool IsKeyDown(KeyCode keycode);
 
@@ -22,8 +22,6 @@ namespace Walnut {
 		static glm::vec2 GetMousePosition();
 
 		static void SetCursorMode(CursorMode mode);
-
-		static void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
 
 		static std::unordered_map<KeyCode, std::function<void()>> KEY_CALLBACK_MAP;
 	};

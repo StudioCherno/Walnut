@@ -6,27 +6,29 @@
 
 namespace Walnut {
 
-	void Input::InitKeysCallBack()
-	{
-		GLFWwindow* windowHandle = Application::Get().GetWindowHandle();
-		glfwSetKeyCallback(windowHandle, KeyCallback);
-	}
-
-	void Input::KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
+	void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
 	{
 		if (action == GLFW_PRESS)
 		{
 			KeyCode keycode = (KeyCode)key;
 
-			auto funcIter = KEY_CALLBACK_MAP.find(keycode);
-			if (funcIter != KEY_CALLBACK_MAP.end())
+			auto funcIter = Input::KEY_CALLBACK_MAP.find(keycode);
+			if (funcIter != Input::KEY_CALLBACK_MAP.end())
 			{
 				funcIter->second();
 			}
 		}
 	}
 
-	void Input::SetKeyCallback(KeyCode keycode, std::function<void()>& func)
+	void Input::InitKeysCallBack()
+	{
+		GLFWwindow* windowHandle = Application::Get().GetWindowHandle();
+		glfwSetKeyCallback(windowHandle, KeyCallback);
+	}
+
+	
+
+	void Input::SetKeyCallback(KeyCode keycode, std::function<void()> func)
 	{
 		KEY_CALLBACK_MAP[keycode] = func;
 	}
