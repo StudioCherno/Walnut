@@ -8,10 +8,12 @@ IncludeDir["glm"] = "../vendor/glm"
 IncludeDir["spdlog"] = "../vendor/spdlog/include"
 
 LibraryDir = {}
-LibraryDir["VulkanSDK"] = "%{VULKAN_SDK}/Lib"
+LibraryDir["VulkanSDK32"] = "%{VULKAN_SDK}/Lib32"
+LibraryDir["VulkanSDK64"] = "%{VULKAN_SDK}/Lib"
 
 Library = {}
-Library["Vulkan"] = "%{LibraryDir.VulkanSDK}/vulkan-1.lib"
+Library["Vulkan32"] = "%{LibraryDir.VulkanSDK32}/vulkan-1.lib"
+Library["Vulkan64"] = "%{LibraryDir.VulkanSDK64}/vulkan-1.lib"
 
 group "Dependencies"
    include "vendor/imgui"

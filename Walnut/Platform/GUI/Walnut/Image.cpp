@@ -173,12 +173,12 @@ namespace Walnut {
 			vkFreeMemory(device, stagingBufferMemory, nullptr);
 		});
 
-		m_Sampler = nullptr;
-		m_ImageView = nullptr;
-		m_Image = nullptr;
-		m_Memory = nullptr;
-		m_StagingBuffer = nullptr;
-		m_StagingBufferMemory = nullptr;
+		m_Sampler = 0;
+		m_ImageView = 0;
+		m_Image = 0;
+		m_Memory = 0;
+		m_StagingBuffer = 0;
+		m_StagingBufferMemory = 0;
 	}
 
 	void Image::SetData(const void* data)

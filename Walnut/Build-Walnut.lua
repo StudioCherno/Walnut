@@ -32,9 +32,12 @@ project "Walnut"
    {
        "ImGui",
        "GLFW",
-
-       "%{Library.Vulkan}",
    }
+
+   filter "platforms:x32"
+      links "%{Library.Vulkan32}"
+   filter "platforms:x64"
+      links "%{Library.Vulkan64}"
 
    targetdir ("../../bin/" .. outputdir .. "/%{prj.name}")
    objdir ("../../bin-int/" .. outputdir .. "/%{prj.name}")
