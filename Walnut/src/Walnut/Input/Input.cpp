@@ -10,7 +10,7 @@ namespace Walnut {
 
 	void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
 	{
-		if (action == GLFW_PRESS)
+		if (action == GLFW_PRESS || action == GLFW_REPEAT)
 		{
 			auto funcIter = Input::KEY_CALLBACK_MAP.find(key);
 			if (funcIter != Input::KEY_CALLBACK_MAP.end())
@@ -25,8 +25,6 @@ namespace Walnut {
 		GLFWwindow* windowHandle = Application::Get().GetWindowHandle();
 		glfwSetKeyCallback(windowHandle, KeyCallback);
 	}
-
-	
 
 	void Input::SetKeyCallback(KeyCode keycode, std::function<void()> func)
 	{
