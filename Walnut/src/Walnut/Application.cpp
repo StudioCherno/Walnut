@@ -410,7 +410,7 @@ namespace Walnut {
 		glfwSetErrorCallback(glfw_error_callback);
 		if (!glfwInit())
 		{
-			std::cerr << "Could not initalize GLFW!\n";
+			std::cerr << "Could not initialize GLFW!\n";
 			return;
 		}
 
