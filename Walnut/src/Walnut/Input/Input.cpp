@@ -6,13 +6,13 @@
 
 namespace Walnut {
 
+	std::unordered_map<int, std::function<void()>> Input::KEY_CALLBACK_MAP;
+
 	void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
 	{
 		if (action == GLFW_PRESS)
 		{
-			KeyCode keycode = (KeyCode)key;
-
-			auto funcIter = Input::KEY_CALLBACK_MAP.find(keycode);
+			auto funcIter = Input::KEY_CALLBACK_MAP.find(key);
 			if (funcIter != Input::KEY_CALLBACK_MAP.end())
 			{
 				funcIter->second();
@@ -30,7 +30,7 @@ namespace Walnut {
 
 	void Input::SetKeyCallback(KeyCode keycode, std::function<void()> func)
 	{
-		KEY_CALLBACK_MAP[keycode] = func;
+		KEY_CALLBACK_MAP[(int)keycode] = func;
 	}
 
 	bool Input::IsKeyDown(KeyCode keycode)
