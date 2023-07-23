@@ -13,6 +13,13 @@ namespace Walnut {
 		return state == GLFW_PRESS || state == GLFW_REPEAT;
 	}
 
+	bool Input::IsKeyPressed(KeyCode keycode)
+	{
+		GLFWwindow* windowHandle = Application::Get().GetWindowHandle();
+		int state = glfwGetKey(windowHandle, (int)keycode);
+		return state == GLFW_PRESS;
+	}
+
 	bool Input::IsMouseButtonDown(MouseButton button)
 	{
 		GLFWwindow* windowHandle = Application::Get().GetWindowHandle();
