@@ -19,10 +19,10 @@ project "WalnutApp"
       "%{IncludeDir.glm}",
    }
 
-    links
-    {
-        "Walnut"
-    }
+   links
+   {
+      "Walnut"
+   }
 
    targetdir ("../bin/" .. outputdir .. "/%{prj.name}")
    objdir ("../bin-int/" .. outputdir .. "/%{prj.name}")
