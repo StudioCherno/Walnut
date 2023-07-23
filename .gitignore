@@ -2,6 +2,7 @@
 .vs/
 bin/
 bin-int/
+obj/
 
 # Files
 *.vcxproj
