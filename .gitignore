@@ -9,5 +9,11 @@ bin-int/
 *.vcxproj.filters
 *.sln
 
+# Exclude premake5
+premake5.exe
+
+# Exclude Dear ImGui
+imgui.ini
+
 # Exclude
 !vendor/bin
