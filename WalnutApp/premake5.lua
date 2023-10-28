@@ -4,13 +4,18 @@ project "WalnutApp"
    cppdialect "C++17"
    targetdir "bin/%{cfg.buildcfg}"
    staticruntime "off"
+   characterset "MBCS"
 
    files { "src/**.h", "src/**.cpp" }
 
    includedirs
    {
+      "%{prj.name}/src",
       "../vendor/imgui",
       "../vendor/glfw/include",
+      "../vendor/HTTPRequest/include",
+      "../vendor/json/single_include",
+      "../vendor/spdlog/include",
 
       "../Walnut/src",
 
@@ -24,7 +29,7 @@ project "WalnutApp"
     }
 
    targetdir ("../bin/" .. outputdir .. "/%{prj.name}")
-   objdir ("../bin-int/" .. outputdir .. "/%{prj.name}")
+   objdir ("../bin/" .. outputdir .. "/obj/%{prj.name}")
 
    filter "system:windows"
       systemversion "latest"
