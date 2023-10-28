@@ -15,3 +15,12 @@
 [submodule "vendor/GLFW"]
 	path = vendor/GLFW
 	url = https://github.com/TheCherno/GLFW
+[submodule "vendor/HTTPRequest"]
+	path = vendor/HTTPRequest
+	url = https://github.com/elnormous/HTTPRequest
+[submodule "vendor/spdlog"]
+	path = vendor/spdlog
+	url = https://github.com/gabime/spdlog
+[submodule "vendor/json"]
+	path = vendor/json
+	url = https://github.com/nlohmann/json
