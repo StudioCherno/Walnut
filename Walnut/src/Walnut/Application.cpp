@@ -4,6 +4,7 @@
 // Adapted from Dear ImGui Vulkan example
 //
 
+#include "imgui_internal.h"
 #include "backends/imgui_impl_glfw.h"
 #include "backends/imgui_impl_vulkan.h"
 #include <stdio.h>          // printf, fprintf
@@ -597,7 +598,7 @@ namespace Walnut {
 			ImGui::NewFrame();
 
 			{
-				static ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_None;
+				static ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_NoWindowMenuButton | ImGuiDockNodeFlags_NoCloseButton;
 
 				// We are using the ImGuiWindowFlags_NoDocking flag to make the parent window not dockable into,
 				// because it would be confusing to have two docking targets within each others.

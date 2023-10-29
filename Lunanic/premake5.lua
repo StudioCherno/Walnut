@@ -1,17 +1,21 @@
-project "WalnutApp"
+project "Lunanic"
    kind "ConsoleApp"
    language "C++"
-   cppdialect "C++17"
+   cppdialect "C++20"
    targetdir "bin/%{cfg.buildcfg}"
    staticruntime "off"
-   characterset "MBCS"
 
    files { "src/**.h", "src/**.cpp" }
 
+   PrecompiledHeaderInclude = "Common.h"
+   PrecompiledHeaderSource = "src/Common.cpp"
+
    includedirs
    {
-      "%{prj.name}/src",
+      "src",
+
       "../vendor/imgui",
+      "../vendor/imgui/misc/cpp",
       "../vendor/glfw/include",
       "../vendor/HTTPRequest/include",
       "../vendor/json/single_include",
@@ -25,11 +29,13 @@ project "WalnutApp"
 
     links
     {
-        "Walnut"
+        "Walnut",
+	"fmtlib",
+	"ImGui"
     }
 
-   targetdir ("../bin/" .. outputdir .. "/%{prj.name}")
-   objdir ("../bin/" .. outputdir .. "/obj/%{prj.name}")
+   targetdir ("../bin/%{prj.name}")
+   objdir ("../bin/obj/%{prj.name}")
 
    filter "system:windows"
       systemversion "latest"

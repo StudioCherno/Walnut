@@ -1,10 +1,10 @@
 -- premake5.lua
-workspace "WalnutApp"
+workspace "Lunanic"
    architecture "x64"
    configurations { "Debug", "Release", "Dist" }
-   startproject "WalnutApp"
+   startproject "Lunanic"
 
 outputdir = "%{cfg.buildcfg}-%{cfg.system}-%{cfg.architecture}"
 
 include "WalnutExternal.lua"
-include "WalnutApp"
+include "Lunanic"
