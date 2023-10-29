@@ -30,7 +30,6 @@ project "Lunanic"
     links
     {
         "Walnut",
-	"fmtlib",
 	"ImGui"
     }
 

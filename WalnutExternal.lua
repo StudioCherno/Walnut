@@ -14,7 +14,6 @@ Library["Vulkan"] = "%{LibraryDir.VulkanSDK}/vulkan-1.lib"
 
 group "Dependencies"
    include "vendor/imgui"
-   include "vendor/fmtlib"
    include "vendor/glfw"
 group ""
 
