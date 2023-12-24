@@ -33,6 +33,7 @@ namespace Walnut {
 		// Uses custom Walnut titlebar instead
 		// of Windows default
 		bool CustomTitlebar = false;
+		bool AllowMaximize = true;
 
 		// Window will be created in the center
 		// of primary monitor
@@ -67,6 +68,7 @@ namespace Walnut {
 		float GetTime();
 		GLFWwindow* GetWindowHandle() const { return m_WindowHandle; }
 		bool IsTitleBarHovered() const { return m_TitleBarHovered; }
+		float GetTitleBarHeight() const { return m_titleBarHeight; }
 
 		static VkInstance GetInstance();
 		static VkPhysicalDevice GetPhysicalDevice();
@@ -89,7 +91,7 @@ namespace Walnut {
 		void Shutdown();
 
 		// For custom titlebars
-		void UI_DrawTitlebar(float& outTitlebarHeight);
+		void UI_DrawTitlebar(float& outTitlebarHeight, bool allowMaximize = true);
 		void UI_DrawMenubar();
 	private:
 		ApplicationSpecification m_Specification;
@@ -101,6 +103,7 @@ namespace Walnut {
 		float m_LastFrameTime = 0.0f;
 
 		bool m_TitleBarHovered = false;
+		float m_titleBarHeight = -1.0f;
 
 		std::vector<std::shared_ptr<Layer>> m_LayerStack;
 		std::function<void()> m_MenubarCallback;

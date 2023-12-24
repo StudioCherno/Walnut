@@ -26,6 +26,7 @@ project "Walnut"
       "%{IncludeDir.VulkanSDK}",
       "%{IncludeDir.glm}",
       "%{IncludeDir.spdlog}",
+      -- "../vendor/spdlog/include",
    }
 
    links

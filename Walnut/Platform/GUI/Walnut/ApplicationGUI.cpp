@@ -674,7 +674,7 @@ namespace Walnut {
 		Log::Shutdown();
 	}
 
-	void Application::UI_DrawTitlebar(float& outTitlebarHeight)
+	void Application::UI_DrawTitlebar(float& outTitlebarHeight, bool allowMaximize)
 	{
 		const float titlebarHeight = 58.0f;
 		const bool isMaximized = IsMaximized();
@@ -779,26 +779,29 @@ namespace Walnut {
 
 
 		// Maximize Button
-		ImGui::Spring(-1.0f, 17.0f);
-		UI::ShiftCursorY(8.0f);
+		if (allowMaximize)
 		{
-			const int iconWidth = m_IconMaximize->GetWidth();
-			const int iconHeight = m_IconMaximize->GetHeight();
-
-			const bool isMaximized = IsMaximized();
-
-			if (ImGui::InvisibleButton("Maximize", ImVec2(buttonWidth, buttonHeight)))
+			ImGui::Spring(-1.0f, 17.0f);
+			UI::ShiftCursorY(8.0f);
 			{
-				Application::Get().QueueEvent([isMaximized, windowHandle = m_WindowHandle]()
-				{
-					if (isMaximized)
-						glfwRestoreWindow(windowHandle);
-					else
-						glfwMaximizeWindow(windowHandle);
-				});
-			}
+				const int iconWidth = m_IconMaximize->GetWidth();
+				const int iconHeight = m_IconMaximize->GetHeight();
 
-			UI::DrawButtonImage(isMaximized ? m_IconRestore : m_IconMaximize, buttonColN, buttonColH, buttonColP);
+				const bool isMaximized = IsMaximized();
+
+				if (ImGui::InvisibleButton("Maximize", ImVec2(buttonWidth, buttonHeight)))
+				{
+					Application::Get().QueueEvent([isMaximized, windowHandle = m_WindowHandle]()
+						{
+							if (isMaximized)
+								glfwRestoreWindow(windowHandle);
+							else
+								glfwMaximizeWindow(windowHandle);
+						});
+				}
+
+				UI::DrawButtonImage(isMaximized ? m_IconRestore : m_IconMaximize, buttonColN, buttonColH, buttonColP);
+			}
 		}
 
 		// Close Button
@@ -944,9 +947,9 @@ namespace Walnut {
 				
 				if (m_Specification.CustomTitlebar)
 				{
-					float titleBarHeight;
-					UI_DrawTitlebar(titleBarHeight);
-					ImGui::SetCursorPosY(titleBarHeight);
+					m_titleBarHeight;
+					UI_DrawTitlebar(m_titleBarHeight, m_Specification.AllowMaximize);
+					ImGui::SetCursorPosY(m_titleBarHeight);
 
 				}
 
