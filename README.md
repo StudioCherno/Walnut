@@ -4,7 +4,7 @@ Walnut is a simple application framework built with Dear ImGui and designed to b
 
 Currently supports Windows - with macOS and Linux support planned. Setup scripts support Visual Studio 2022 by default.
 
-![WalnutExample](https://hazelengine.com/images/ForestLauncherScreenshot.jpg)
+![WalnutExample](https://hazelengine.com/images/Hazel-2023.2-Screenshot_huda087e3f95812a96d2373c8ea820d639_197486_753x548_resize_q90_h2_box.webp)
 _<center>Forest Launcher - an application made with Walnut</center>_
 
 ## Requirements
