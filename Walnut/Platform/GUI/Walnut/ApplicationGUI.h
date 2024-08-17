@@ -48,6 +48,7 @@ namespace Walnut {
 		static Application& Get();
 
 		void Run();
+		void Frame();
 		void SetMenubarCallback(const std::function<void()>& menubarCallback) { m_MenubarCallback = menubarCallback; }
 
 		template<typename T>
@@ -95,6 +96,7 @@ namespace Walnut {
 		ApplicationSpecification m_Specification;
 		GLFWwindow* m_WindowHandle = nullptr;
 		bool m_Running = false;
+		bool m_MainMinimized = false;
 
 		float m_TimeStep = 0.0f;
 		float m_FrameTime = 0.0f;

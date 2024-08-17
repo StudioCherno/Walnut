@@ -396,6 +396,17 @@ static void glfw_error_callback(int error, const char* description)
 	fprintf(stderr, "Glfw Error %d: %s\n", error, description);
 }
 
+static void Walnut_WindowSizeCallback(GLFWwindow* window, int width, int height)
+{
+	// https://github.com/ocornut/imgui/pull/6461/files
+	auto& app = Walnut::Application::Get();
+	if (window == app.GetWindowHandle())
+	{
+		g_SwapChainRebuild = true;
+		app.Frame();
+	}
+}
+
 namespace Walnut {
 
 #include "Walnut/Embed/Walnut-Icon.embed"
@@ -629,6 +640,8 @@ namespace Walnut {
 			free(data);
 		}
 
+		// Now the window is initialized, we are ready to redraw in resize events
+		glfwSetWindowSizeCallback(m_WindowHandle, Walnut_WindowSizeCallback);
 	}
 
 	void Application::Shutdown()
@@ -852,152 +865,156 @@ namespace Walnut {
 	{
 		m_Running = true;
 
-		ImGui_ImplVulkanH_Window* wd = &g_MainWindowData;
-		ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
-		ImGuiIO& io = ImGui::GetIO();
-
 		// Main loop
 		while (!glfwWindowShouldClose(m_WindowHandle) && m_Running)
 		{
-			// Poll and handle events (inputs, window resize, etc.)
-			// You can read the io.WantCaptureMouse, io.WantCaptureKeyboard flags to tell if dear imgui wants to use your inputs.
-			// - When io.WantCaptureMouse is true, do not dispatch mouse input data to your main application.
-			// - When io.WantCaptureKeyboard is true, do not dispatch keyboard input data to your main application.
-			// Generally you may always pass all inputs to dear imgui, and hide them from your application based on those two flags.
-			glfwPollEvents();
-
-			{
-				std::scoped_lock<std::mutex> lock(m_EventQueueMutex);
-
-				// Process custom event queue
-				while (m_EventQueue.size() > 0)
-				{
-					auto& func = m_EventQueue.front();
-					func();
-					m_EventQueue.pop();
-				}
-			}
-
-			for (auto& layer : m_LayerStack)
-				layer->OnUpdate(m_TimeStep);
-
-			// Resize swap chain?
-			if (g_SwapChainRebuild)
-			{
-				int width, height;
-				glfwGetFramebufferSize(m_WindowHandle, &width, &height);
-				if (width > 0 && height > 0)
-				{
-					ImGui_ImplVulkan_SetMinImageCount(g_MinImageCount);
-					ImGui_ImplVulkanH_CreateOrResizeWindow(g_Instance, g_PhysicalDevice, g_Device, &g_MainWindowData, g_QueueFamily, g_Allocator, width, height, g_MinImageCount);
-					g_MainWindowData.FrameIndex = 0;
-
-					// Clear allocated command buffers from here since entire pool is destroyed
-					s_AllocatedCommandBuffers.clear();
-					s_AllocatedCommandBuffers.resize(g_MainWindowData.ImageCount);
-
-					g_SwapChainRebuild = false;
-				}
-			}
-
-			// Start the Dear ImGui frame
-			ImGui_ImplVulkan_NewFrame();
-			ImGui_ImplGlfw_NewFrame();
-			ImGui::NewFrame();
-
-			{
-				// We are using the ImGuiWindowFlags_NoDocking flag to make the parent window not dockable into,
-				// because it would be confusing to have two docking targets within each others.
-				ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoDocking;
-
-				ImGuiViewport* viewport = ImGui::GetMainViewport();
-				ImGui::SetNextWindowPos(viewport->Pos);
-				ImGui::SetNextWindowSize(viewport->Size);
-				ImGui::SetNextWindowViewport(viewport->ID);
-				ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
-				ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
-				window_flags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove;
-				window_flags |= ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
-				if (!m_Specification.CustomTitlebar && m_MenubarCallback)
-					window_flags |= ImGuiWindowFlags_MenuBar;
-
-				const bool isMaximized = IsMaximized();
-
-				ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, isMaximized ? ImVec2(6.0f, 6.0f) : ImVec2(1.0f, 1.0f));
-				ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 3.0f);
-
-				ImGui::PushStyleColor(ImGuiCol_MenuBarBg, ImVec4{ 0.0f, 0.0f, 0.0f, 0.0f });
-				ImGui::Begin("DockSpaceWindow", nullptr, window_flags);
-				ImGui::PopStyleColor(); // MenuBarBg
-				ImGui::PopStyleVar(2);
-
-				ImGui::PopStyleVar(2);
-
-				{
-					ImGui::PushStyleColor(ImGuiCol_Border, IM_COL32(50, 50, 50, 255));
-					// Draw window border if the window is not maximized
-					if (!isMaximized)
-						UI::RenderWindowOuterBorders(ImGui::GetCurrentWindow());
-
-					ImGui::PopStyleColor(); // ImGuiCol_Border
-				}
-				
-				if (m_Specification.CustomTitlebar)
-				{
-					float titleBarHeight;
-					UI_DrawTitlebar(titleBarHeight);
-					ImGui::SetCursorPosY(titleBarHeight);
-
-				}
-
-				// Dockspace
-				ImGuiIO& io = ImGui::GetIO();
-				ImGuiStyle& style = ImGui::GetStyle();
-				float minWinSizeX = style.WindowMinSize.x;
-				style.WindowMinSize.x = 370.0f;
-				ImGui::DockSpace(ImGui::GetID("MyDockspace"));
-				style.WindowMinSize.x = minWinSizeX;
-
-				if (!m_Specification.CustomTitlebar)
-					UI_DrawMenubar();
-
-				for (auto& layer : m_LayerStack)
-					layer->OnUIRender();
-
-				ImGui::End();
-			}
-
-			// Rendering
-			ImGui::Render();
-			ImDrawData* main_draw_data = ImGui::GetDrawData();
-			const bool main_is_minimized = (main_draw_data->DisplaySize.x <= 0.0f || main_draw_data->DisplaySize.y <= 0.0f);
-			wd->ClearValue.color.float32[0] = clear_color.x * clear_color.w;
-			wd->ClearValue.color.float32[1] = clear_color.y * clear_color.w;
-			wd->ClearValue.color.float32[2] = clear_color.z * clear_color.w;
-			wd->ClearValue.color.float32[3] = clear_color.w;
-			if (!main_is_minimized)
-				FrameRender(wd, main_draw_data);
-
-			// Update and Render additional Platform Windows
-			if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
-			{
-				ImGui::UpdatePlatformWindows();
-				ImGui::RenderPlatformWindowsDefault();
-			}
-
-			// Present Main Platform Window
-			if (!main_is_minimized)
-				FramePresent(wd);
-			else
+			Frame();
+			if (m_MainMinimized)
 				std::this_thread::sleep_for(std::chrono::milliseconds(5));
 
-			float time = GetTime();
-			m_FrameTime = time - m_LastFrameTime;
-			m_TimeStep = glm::min<float>(m_FrameTime, 0.0333f);
-			m_LastFrameTime = time;
+		}
+	}
+
+	void Application::Frame()
+	{
+		ImGui_ImplVulkanH_Window* wd = &g_MainWindowData;
+		ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
+
+		// Poll and handle events (inputs, window resize, etc.)
+		// You can read the io.WantCaptureMouse, io.WantCaptureKeyboard flags to tell if dear imgui wants to use your inputs.
+		// - When io.WantCaptureMouse is true, do not dispatch mouse input data to your main application.
+		// - When io.WantCaptureKeyboard is true, do not dispatch keyboard input data to your main application.
+		// Generally you may always pass all inputs to dear imgui, and hide them from your application based on those two flags.
+		glfwPollEvents();
+
+		{
+			std::scoped_lock<std::mutex> lock(m_EventQueueMutex);
+
+			// Process custom event queue
+			while (m_EventQueue.size() > 0)
+			{
+				auto& func = m_EventQueue.front();
+				func();
+				m_EventQueue.pop();
+			}
 		}
 
+		for (auto& layer : m_LayerStack)
+			layer->OnUpdate(m_TimeStep);
+
+		// Resize swap chain?
+		if (g_SwapChainRebuild)
+		{
+			int width, height;
+			glfwGetFramebufferSize(m_WindowHandle, &width, &height);
+			if (width > 0 && height > 0)
+			{
+				ImGui_ImplVulkan_SetMinImageCount(g_MinImageCount);
+				ImGui_ImplVulkanH_CreateOrResizeWindow(g_Instance, g_PhysicalDevice, g_Device, &g_MainWindowData, g_QueueFamily, g_Allocator, width, height, g_MinImageCount);
+				g_MainWindowData.FrameIndex = 0;
+
+				// Clear allocated command buffers from here since entire pool is destroyed
+				s_AllocatedCommandBuffers.clear();
+				s_AllocatedCommandBuffers.resize(g_MainWindowData.ImageCount);
+
+				g_SwapChainRebuild = false;
+			}
+		}
+
+		// Start the Dear ImGui frame
+		ImGui_ImplVulkan_NewFrame();
+		ImGui_ImplGlfw_NewFrame();
+		ImGui::NewFrame();
+
+		{
+			// We are using the ImGuiWindowFlags_NoDocking flag to make the parent window not dockable into,
+			// because it would be confusing to have two docking targets within each others.
+			ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoDocking;
+
+			ImGuiViewport* viewport = ImGui::GetMainViewport();
+			ImGui::SetNextWindowPos(viewport->Pos);
+			ImGui::SetNextWindowSize(viewport->Size);
+			ImGui::SetNextWindowViewport(viewport->ID);
+			ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+			ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+			window_flags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove;
+			window_flags |= ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
+			if (!m_Specification.CustomTitlebar && m_MenubarCallback)
+				window_flags |= ImGuiWindowFlags_MenuBar;
+
+			const bool isMaximized = IsMaximized();
+
+			ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, isMaximized ? ImVec2(6.0f, 6.0f) : ImVec2(1.0f, 1.0f));
+			ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 3.0f);
+
+			ImGui::PushStyleColor(ImGuiCol_MenuBarBg, ImVec4{ 0.0f, 0.0f, 0.0f, 0.0f });
+			ImGui::Begin("DockSpaceWindow", nullptr, window_flags);
+			ImGui::PopStyleColor(); // MenuBarBg
+			ImGui::PopStyleVar(2);
+
+			ImGui::PopStyleVar(2);
+
+			{
+				ImGui::PushStyleColor(ImGuiCol_Border, IM_COL32(50, 50, 50, 255));
+				// Draw window border if the window is not maximized
+				if (!isMaximized)
+					UI::RenderWindowOuterBorders(ImGui::GetCurrentWindow());
+
+				ImGui::PopStyleColor(); // ImGuiCol_Border
+			}
+
+			if (m_Specification.CustomTitlebar)
+			{
+				float titleBarHeight;
+				UI_DrawTitlebar(titleBarHeight);
+				ImGui::SetCursorPosY(titleBarHeight);
+			}
+
+			// Dockspace
+			ImGuiStyle& style = ImGui::GetStyle();
+			float minWinSizeX = style.WindowMinSize.x;
+			style.WindowMinSize.x = 370.0f;
+			ImGui::DockSpace(ImGui::GetID("MyDockspace"));
+			style.WindowMinSize.x = minWinSizeX;
+
+			if (!m_Specification.CustomTitlebar)
+				UI_DrawMenubar();
+
+			for (auto& layer : m_LayerStack)
+				layer->OnUIRender();
+
+			ImGui::End();
+		}
+
+		// Rendering
+		ImGui::Render();
+		ImDrawData* main_draw_data = ImGui::GetDrawData();
+		m_MainMinimized = (main_draw_data->DisplaySize.x <= 0.0f || main_draw_data->DisplaySize.y <= 0.0f);
+		wd->ClearValue.color.float32[0] = clear_color.x * clear_color.w;
+		wd->ClearValue.color.float32[1] = clear_color.y * clear_color.w;
+		wd->ClearValue.color.float32[2] = clear_color.z * clear_color.w;
+		wd->ClearValue.color.float32[3] = clear_color.w;
+		if (!m_MainMinimized)
+			FrameRender(wd, main_draw_data);
+
+		// Update and Render additional Platform Windows
+		const ImGuiIO& io = ImGui::GetIO();
+		if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
+		{
+			ImGui::UpdatePlatformWindows();
+			ImGui::RenderPlatformWindowsDefault();
+		}
+
+		// Present Main Platform Window
+		if (!m_MainMinimized)
+			FramePresent(wd);
+
+		float time = GetTime();
+		m_FrameTime = time - m_LastFrameTime;
+		m_TimeStep = glm::min<float>(m_FrameTime, 0.0333f);
+		m_LastFrameTime = time;
 	}
+
 
 	void Application::Close()
 	{
