@@ -32,6 +32,20 @@ Walnut::Application* Walnut::CreateApplication(int argc, char** argv)
 				app->Close();
 			}
 			ImGui::EndMenu();
+		}else if(ImGui::BeginMenu("Help"))
+		{
+			if(ImGui::MenuItem("About"))
+			{
+				ImGui::Begin("About", &show_about_dialog, ImGuiWindowFlags_AlwaysAutoResize);
+
+        		ImGui::Text("Walnut");
+        		ImGui::Separator();
+        		ImGui::Text("Version: 1.0.0");
+        		ImGui::Text("Developed by: Cherno");
+        		ImGui::Text("Website: https://github.com/thecherno");
+
+			}
+				ImGui::EndMenu();
 		}
 	});
 	return app;
