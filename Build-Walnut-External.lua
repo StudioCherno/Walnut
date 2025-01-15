@@ -13,13 +13,13 @@ LibraryDir["VulkanSDK"] = "%{VULKAN_SDK}/Lib"
 Library = {}
 Library["Vulkan"] = "%{LibraryDir.VulkanSDK}/vulkan-1.lib"
 
-group "Dependencies"
+group "Frontend/Dependencies"
    include "vendor/imgui"
    include "vendor/glfw"
    include "vendor/yaml-cpp"
 group ""
 
-group "Core"
+group "Frontend/Core"
     include "Walnut/Build-Walnut.lua"
 
     -- Optional modules

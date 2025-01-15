@@ -7,8 +7,8 @@ project "Walnut"
 
    files
    {
-       "Source/**.h",
-       "Source/**.cpp",
+       "src/**.h",
+       "src/**.cpp",
 
        "Platform/GUI/**.h",
        "Platform/GUI/**.cpp",
@@ -16,7 +16,7 @@ project "Walnut"
 
    includedirs
    {
-      "Source",
+      "src",
       "Platform/GUI",
 
       "../vendor/imgui",
@@ -36,8 +36,8 @@ project "Walnut"
        "%{Library.Vulkan}",
    }
 
-   targetdir ("../../bin/" .. outputdir .. "/%{prj.name}")
-   objdir ("../../bin-int/" .. outputdir .. "/%{prj.name}")
+   targetdir ("../../bin/%{cfg.buildcfg}/%{prj.name}")
+   objdir ("../../bin/intermediate/%{cfg.buildcfg}/%{prj.name}")
 
    filter "system:windows"
       systemversion "latest"
