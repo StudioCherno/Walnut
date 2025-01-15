@@ -29,8 +29,8 @@ project "Walnut-Headless"
 
    defines { "WL_HEADLESS" }
 
-   targetdir ("../bin/" .. outputdir .. "/%{prj.name}")
-   objdir ("../bin-int/" .. outputdir .. "/%{prj.name}")
+   targetdir ("../bin/%{cfg.buildcfg}/%{prj.name}")
+   objdir ("../bin/intermediate/%{cfg.buildcfg}/%{prj.name}")
 
    filter "system:windows"
       systemversion "latest"
