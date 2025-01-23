@@ -399,7 +399,8 @@ static void glfw_error_callback(int error, const char* description)
 namespace Walnut {
 
 #include "Walnut/Embed/Walnut-Icon.embed"
-#include "Walnut/Embed/3DM-Icon.embed"
+//#include "Walnut/Embed/3DM-Icon.embed"
+#include "../Embed-3DM/3DM-Icon.embed"
 #include "Walnut/Embed/WindowImages.embed"
 
 	Application::Application(const ApplicationSpecification& specification)
