@@ -1,3 +1,7 @@
+# Temporary files
+*~
+*.swp
+
 # Directories
 .vs/
 bin/
@@ -8,6 +12,7 @@ bin-int/
 *.vcxproj.user
 *.vcxproj.filters
 *.sln
+Makefile
 
 # Exclude
 !vendor/bin
