@@ -671,7 +671,8 @@ namespace Walnut {
 				ImGui_ImplVulkanH_Frame* frame = &g_MainWindowData.Frames[i];
 				if (frame->Fence != VK_NULL_HANDLE)
 				{
-					vkWaitForFences(g_Device, 1, &frame->Fence, VK_TRUE, UINT64_MAX);
+					VkResult err = vkWaitForFences(g_Device, 1, &frame->Fence, VK_TRUE, UINT64_MAX);
+					check_vk_result(err);
 				}
 			}
 
