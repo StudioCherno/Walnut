@@ -663,6 +663,18 @@ namespace Walnut {
 			wd->ClearValue.color.float32[3] = clear_color.w;
 			if (!main_is_minimized)
 				FrameRender(wd, main_draw_data);
+			
+				
+			// Wait for all fences to avoid semaphore reuse issues in multi-viewport mode
+			for (uint32_t i = 0; i < g_MainWindowData.ImageCount; i++)
+			{
+				ImGui_ImplVulkanH_Frame* frame = &g_MainWindowData.Frames[i];
+				if (frame->Fence != VK_NULL_HANDLE)
+				{
+					VkResult err = vkWaitForFences(g_Device, 1, &frame->Fence, VK_TRUE, UINT64_MAX);
+					check_vk_result(err);
+				}
+			}
 
 			// Update and Render additional Platform Windows
 			if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
