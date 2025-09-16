@@ -16,3 +16,6 @@
 [submodule "Walnut-Modules/Walnut-Networking"]
 	path = Walnut-Modules/Walnut-Networking
 	url = https://github.com/StudioCherno/Walnut-Networking
+[submodule "vendor/imgui"]
+	path = vendor/imgui
+	url = https://github.com/bossman602/imgui.git
