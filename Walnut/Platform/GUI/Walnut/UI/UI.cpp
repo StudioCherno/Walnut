@@ -52,6 +52,13 @@ namespace Walnut::UI {
 		ImU32 tintNormal, ImU32 tintHovered, ImU32 tintPressed,
 		ImVec2 rectMin, ImVec2 rectMax)
 	{
+
+		if (imageNormal == nullptr || imageHovered == nullptr || imagePressed == nullptr)
+		{
+			printf("Warning: DrawButtonImage was called with a null image!\n");
+			return;
+		}
+
 		auto* drawList = ImGui::GetForegroundDrawList();
 		if (ImGui::IsItemActive())
 			drawList->AddImage(imagePressed->GetDescriptorSet(), rectMin, rectMax, ImVec2(0, 0), ImVec2(1, 1), tintPressed);
@@ -158,7 +165,7 @@ namespace Walnut::UI {
 		}
 		if (g.Style.FrameBorderSize > 0 && !(window->Flags & ImGuiWindowFlags_NoTitleBar) && !window->DockIsActive)
 		{
-			float y = window->Pos.y + window->TitleBarHeight() - 1;
+			float y = window->Pos.y + window->TitleBarHeight - 1;
 			window->DrawList->AddLine(ImVec2(window->Pos.x + border_size, y), ImVec2(window->Pos.x + window->Size.x - border_size, y), ImGui::GetColorU32(ImGuiCol_Border), g.Style.FrameBorderSize);
 		}
 	}
@@ -171,7 +178,7 @@ namespace Walnut::UI {
 		{
 			ImGuiContext& g = *GImGui;
 			ImVec2 new_size = size_desired;
-			if (g.NextWindowData.Flags & ImGuiNextWindowDataFlags_HasSizeConstraint)
+			if (g.NextWindowData.HasFlags & ImGuiNextWindowDataFlags_HasSizeConstraint)
 			{
 				// Using -1,-1 on either X/Y axis to preserve the current size.
 				ImRect cr = g.NextWindowData.SizeConstraintRect;
@@ -195,7 +202,7 @@ namespace Walnut::UI {
 			if (!(window->Flags & (ImGuiWindowFlags_ChildWindow | ImGuiWindowFlags_AlwaysAutoResize)))
 			{
 				ImGuiWindow* window_for_height = (window->DockNodeAsHost && window->DockNodeAsHost->VisibleWindow) ? window->DockNodeAsHost->VisibleWindow : window;
-				const float decoration_up_height = window_for_height->TitleBarHeight() + window_for_height->MenuBarHeight();
+				const float decoration_up_height = window_for_height->TitleBarHeight + window_for_height->MenuBarHeight;
 				new_size = ImMax(new_size, g.Style.WindowMinSize);
 				new_size.y = ImMax(new_size.y, decoration_up_height + ImMax(0.0f, g.Style.WindowRounding - 1.0f)); // Reduce artifacts with very small windows
 			}
@@ -206,7 +213,7 @@ namespace Walnut::UI {
 		{
 			ImGuiContext& g = *GImGui;
 			ImGuiStyle& style = g.Style;
-			const float decoration_up_height = window->TitleBarHeight() + window->MenuBarHeight();
+			const float decoration_up_height = window->TitleBarHeight + window->MenuBarHeight;
 			ImVec2 size_pad{ window->WindowPadding.x * 2.0f, window->WindowPadding.y * 2.0f };
 			ImVec2 size_desired = { size_contents.x + size_pad.x + 0.0f, size_contents.y + size_pad.y + decoration_up_height };
 			if (window->Flags & ImGuiWindowFlags_Tooltip)
@@ -464,7 +471,7 @@ namespace Walnut::UI {
 		//window->Size = window->SizeFull;
 		return changed;
 	}
-
+	
 	bool BeginMenubar(const ImRect& barRectangle)
 	{
 		ImGuiWindow* window = ImGui::GetCurrentWindow();
@@ -474,6 +481,18 @@ namespace Walnut::UI {
 			return false;*/
 
 		IM_ASSERT(!window->DC.MenuBarAppending);
+
+			// Debug output
+		ImGuiIO& io = ImGui::GetIO();
+		static int debug_frame = 0;
+		debug_frame++;
+
+		if (io.MouseClicked[0]) {
+			printf("Frame %d: Mouse clicked at %.1f, %.1f\n", debug_frame, io.MousePos.x, io.MousePos.y);
+			printf("Frame %d: Bar rectangle: %.1f, %.1f -> %.1f, %.1f\n", debug_frame,
+				barRectangle.Min.x, barRectangle.Min.y, barRectangle.Max.x, barRectangle.Max.y);
+		}
+
 		ImGui::BeginGroup(); // Backup position on layer 0 // FIXME: Misleading to use a group for that backup/restore
 		ImGui::PushID("##menubar");
 
@@ -482,8 +501,24 @@ namespace Walnut::UI {
 		// We don't clip with current window clipping rectangle as it is already set to the area below. However we clip with window full rect.
 		// We remove 1 worth of rounding to Max.x to that text in long menus and small windows don't tend to display over the lower-right rounded area, which looks particularly glitchy.
 		ImRect bar_rect = UI::RectOffset(barRectangle, 0.0f, padding.y);// window->MenuBarRect();
-		ImRect clip_rect(IM_ROUND(ImMax(window->Pos.x, bar_rect.Min.x + window->WindowBorderSize + window->Pos.x - 10.0f)), IM_ROUND(bar_rect.Min.y + window->WindowBorderSize + window->Pos.y),
-			IM_ROUND(ImMax(bar_rect.Min.x + window->Pos.x, bar_rect.Max.x - ImMax(window->WindowRounding, window->WindowBorderSize))), IM_ROUND(bar_rect.Max.y + window->Pos.y));
+		// Register the area for input
+		ImVec2 backup_cursor_pos = window->DC.CursorPos;
+		window->DC.CursorPos = bar_rect.Min;
+		ImGui::ItemSize(bar_rect.GetSize(), 0.0f);
+		bool item_hovered = ImGui::IsItemHovered();
+		bool item_clicked = ImGui::IsItemClicked();
+
+			if (item_clicked) {
+				printf("Frame %d: Menubar area - Hovered: %s, Clicked: %s\n",
+					debug_frame, item_hovered ? "YES" : "NO", item_clicked ? "YES" : "NO");
+			}
+
+		ImRect clip_rect(
+			IM_ROUND(ImMax(window->Pos.x, bar_rect.Min.x + window->WindowBorderSize + window->Pos.x - 10.0f)), 
+			IM_ROUND(bar_rect.Min.y + window->WindowBorderSize + window->Pos.y),
+			IM_ROUND(ImMax(bar_rect.Min.x + window->Pos.x, bar_rect.Max.x - ImMax(window->WindowRounding, window->WindowBorderSize))), 
+			IM_ROUND(bar_rect.Max.y + window->Pos.y)
+		);
 
 		clip_rect.ClipWith(window->OuterRectClipped);
 		ImGui::PushClipRect(clip_rect.Min, clip_rect.Max, false);
@@ -493,6 +528,7 @@ namespace Walnut::UI {
 		window->DC.LayoutType = ImGuiLayoutType_Horizontal;
 		window->DC.NavLayerCurrent = ImGuiNavLayer_Menu;
 		window->DC.MenuBarAppending = true;
+
 		ImGui::AlignTextToFramePadding();
 		return true;
 	}

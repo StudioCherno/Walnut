@@ -1,4 +1,4 @@
-#include "ApplicationGUI.h"
+﻿#include "ApplicationGUI.h"
 
 #include "Walnut/UI/UI.h"
 #include "Walnut/Core/Log.h"
@@ -75,11 +75,11 @@ static Walnut::Application* s_Instance = nullptr;
 
 void check_vk_result(VkResult err)
 {
-	if (err == 0)
-		return;
-	fprintf(stderr, "[vulkan] Error: VkResult = %d\n", err);
-	if (err < 0)
+	if (err != VK_SUCCESS)
+	{
+		WL_CORE_FATAL_TAG("Vulkan", "Failed to create logical device! VkResult = %d", (int)err);
 		abort();
+	}
 }
 
 #ifdef IMGUI_VULKAN_DEBUG_REPORT
@@ -547,8 +547,9 @@ namespace Walnut {
 			style.Colors[ImGuiCol_WindowBg].w = 1.0f;
 		}
 
-		// Setup Platform/Renderer backends
+		// 2. Setup Platform/Renderer backends
 		ImGui_ImplGlfw_InitForVulkan(m_WindowHandle, true);
+
 		ImGui_ImplVulkan_InitInfo init_info = {};
 		init_info.Instance = g_Instance;
 		init_info.PhysicalDevice = g_PhysicalDevice;
@@ -557,13 +558,25 @@ namespace Walnut {
 		init_info.Queue = g_Queue;
 		init_info.PipelineCache = g_PipelineCache;
 		init_info.DescriptorPool = g_DescriptorPool;
+		init_info.RenderPass = wd->RenderPass;
 		init_info.Subpass = 0;
 		init_info.MinImageCount = g_MinImageCount;
 		init_info.ImageCount = wd->ImageCount;
 		init_info.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
 		init_info.Allocator = g_Allocator;
 		init_info.CheckVkResultFn = check_vk_result;
-		ImGui_ImplVulkan_Init(&init_info, wd->RenderPass);
+
+		ImGui_ImplVulkan_Init(&init_info);
+
+		//style.FontSizeBase = 20.0f;
+		//io.Fonts->AddFontDefault();
+		//io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\segoeui.ttf");
+		// io.Fonts->AddFontFromFileTTF("../../misc/fonts/DroidSans.ttf");
+		//io.Fonts->AddFontFromFileTTF("../../misc/fonts/Roboto-Medium.ttf");
+		//io.Fonts->AddFontFromFileTTF("../../misc/fonts/Cousine-Regular.ttf");
+		//ImFont* font = io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\ArialUni.ttf");
+		//IM_ASSERT(font != nullptr);
+		// Draw something (or nothing) and render to upload font textures
 
 		// Load default font
 		ImFontConfig fontConfig;
@@ -573,36 +586,6 @@ namespace Walnut {
 		s_Fonts["Bold"] = io.Fonts->AddFontFromMemoryTTF((void*)g_RobotoBold, sizeof(g_RobotoBold), 20.0f, &fontConfig);
 		s_Fonts["Italic"] = io.Fonts->AddFontFromMemoryTTF((void*)g_RobotoItalic, sizeof(g_RobotoItalic), 20.0f, &fontConfig);
 		io.FontDefault = robotoFont;
-
-		// Upload Fonts
-		{
-			// Use any command queue
-			VkCommandPool command_pool = wd->Frames[wd->FrameIndex].CommandPool;
-			VkCommandBuffer command_buffer = wd->Frames[wd->FrameIndex].CommandBuffer;
-
-			err = vkResetCommandPool(g_Device, command_pool, 0);
-			check_vk_result(err);
-			VkCommandBufferBeginInfo begin_info = {};
-			begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-			begin_info.flags |= VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-			err = vkBeginCommandBuffer(command_buffer, &begin_info);
-			check_vk_result(err);
-
-			ImGui_ImplVulkan_CreateFontsTexture(command_buffer);
-
-			VkSubmitInfo end_info = {};
-			end_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-			end_info.commandBufferCount = 1;
-			end_info.pCommandBuffers = &command_buffer;
-			err = vkEndCommandBuffer(command_buffer);
-			check_vk_result(err);
-			err = vkQueueSubmit(g_Queue, 1, &end_info, VK_NULL_HANDLE);
-			check_vk_result(err);
-
-			err = vkDeviceWaitIdle(g_Device);
-			check_vk_result(err);
-			ImGui_ImplVulkan_DestroyFontUploadObjects();
-		}
 
 		// Load images
 		{
@@ -683,9 +666,10 @@ namespace Walnut {
 
 	void Application::UI_DrawTitlebar(float& outTitlebarHeight)
 	{
+		//printf("--------------------------\n- Info: Drawing Titlebar -\n--------------------------\n");
 		const float titlebarHeight = 58.0f;
 		const bool isMaximized = IsMaximized();
-		float titlebarVerticalOffset = isMaximized ? -6.0f : 0.0f;
+		float titlebarVerticalOffset = isMaximized ? 0.0f : 0.0f;
 		const ImVec2 windowPadding = ImGui::GetCurrentWindow()->WindowPadding;
 
 		ImGui::SetCursorPos(ImVec2(windowPadding.x, windowPadding.y + titlebarVerticalOffset));
@@ -741,11 +725,12 @@ namespace Walnut {
 				ImGui::SetCursorPos(ImVec2(logoHorizontalOffset, 6.0f + titlebarVerticalOffset));
 				UI_DrawMenubar();
 
-				if (ImGui::IsItemHovered())
-					m_TitleBarHovered = false;
+				//if (ImGui::IsItemHovered())
+				//	m_TitleBarHovered = false;
 			}
 
 			ImGui::ResumeLayout();
+			
 		}
 
 		{
@@ -757,70 +742,6 @@ namespace Walnut {
 			ImGui::SetCursorPos(currentCursorPos);
 		}
 
-		// Window buttons
-		const ImU32 buttonColN = UI::Colors::ColorWithMultipliedValue(UI::Colors::Theme::text, 0.9f);
-		const ImU32 buttonColH = UI::Colors::ColorWithMultipliedValue(UI::Colors::Theme::text, 1.2f);
-		const ImU32 buttonColP = UI::Colors::Theme::textDarker;
-		const float buttonWidth = 14.0f;
-		const float buttonHeight = 14.0f;
-
-		// Minimize Button
-
-		ImGui::Spring();
-		UI::ShiftCursorY(8.0f);
-		{
-			const int iconWidth = m_IconMinimize->GetWidth();
-			const int iconHeight = m_IconMinimize->GetHeight();
-			const float padY = (buttonHeight - (float)iconHeight) / 2.0f;
-			if (ImGui::InvisibleButton("Minimize", ImVec2(buttonWidth, buttonHeight)))
-			{
-				// TODO: move this stuff to a better place, like Window class
-				if (m_WindowHandle)
-				{
-					Application::Get().QueueEvent([windowHandle = m_WindowHandle]() { glfwIconifyWindow(windowHandle); });
-				}
-			}
-
-			UI::DrawButtonImage(m_IconMinimize, buttonColN, buttonColH, buttonColP, UI::RectExpanded(UI::GetItemRect(), 0.0f, -padY));
-		}
-
-
-		// Maximize Button
-		ImGui::Spring(-1.0f, 17.0f);
-		UI::ShiftCursorY(8.0f);
-		{
-			const int iconWidth = m_IconMaximize->GetWidth();
-			const int iconHeight = m_IconMaximize->GetHeight();
-
-			const bool isMaximized = IsMaximized();
-
-			if (ImGui::InvisibleButton("Maximize", ImVec2(buttonWidth, buttonHeight)))
-			{
-				Application::Get().QueueEvent([isMaximized, windowHandle = m_WindowHandle]()
-				{
-					if (isMaximized)
-						glfwRestoreWindow(windowHandle);
-					else
-						glfwMaximizeWindow(windowHandle);
-				});
-			}
-
-			UI::DrawButtonImage(isMaximized ? m_IconRestore : m_IconMaximize, buttonColN, buttonColH, buttonColP);
-		}
-
-		// Close Button
-		ImGui::Spring(-1.0f, 15.0f);
-		UI::ShiftCursorY(8.0f);
-		{
-			const int iconWidth = m_IconClose->GetWidth();
-			const int iconHeight = m_IconClose->GetHeight();
-			if (ImGui::InvisibleButton("Close", ImVec2(buttonWidth, buttonHeight)))
-				Application::Get().Close();
-
-			UI::DrawButtonImage(m_IconClose, UI::Colors::Theme::text, UI::Colors::ColorWithMultipliedValue(UI::Colors::Theme::text, 1.4f), buttonColP);
-		}
-
-		ImGui::Spring(-1.0f, 18.0f);
 		ImGui::EndHorizontal();
 
 		outTitlebarHeight = titlebarHeight;
@@ -833,17 +754,148 @@ namespace Walnut {
 
 		if (m_Specification.CustomTitlebar)
 		{
-			const ImRect menuBarRect = { ImGui::GetCursorPos(), { ImGui::GetContentRegionAvail().x + ImGui::GetCursorScreenPos().x, ImGui::GetFrameHeightWithSpacing() } };
+			
+			// The menubar is positioned at the top of the titlebar with some offset
+			const bool isMaximized = IsMaximized();
+			float titlebarVerticalOffset = isMaximized ? 6.0f : 0.0f;
 
-			ImGui::BeginGroup();
-			if (UI::BeginMenubar(menuBarRect))
+			// Get the current cursor position (set by the caller with SetCursorPos)
+			ImVec2 menubar_pos = ImVec2(ImGui::GetCursorPos().x, ImGui::GetCursorPos().y + titlebarVerticalOffset);
+
+			// Calculate menubar dimensions
+			const float menubar_height = ImGui::GetFrameHeight();
+			const ImVec2 content_avail = ImGui::GetContentRegionAvail();
+
+			// Calculate width for the main menubar (leaving space for window controls)
+			const float window_controls_width = 120.0f; // Width for minimize, maximize, close buttons
+			const float main_menubar_width = content_avail.x - window_controls_width;
+
+			// Create a child window for the main menubar
+			ImGui::SetCursorPos(menubar_pos);
+			ImGui::BeginChild("##MainMenuBar", ImVec2(main_menubar_width, menubar_height), false,
+				ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_NoBackground);
+
+			// Check if the menubar is being hovered
+			bool menubar_hovered = ImGui::IsWindowHovered();
+
+			// Use standard ImGui menubar within the child window
+			if (ImGui::BeginMenuBar())
 			{
+				// Store state before menu items
+				ImGuiContext& g = *GImGui;
+				ImGuiID before_hover_id = g.HoveredId;
+				bool before_popup_open = ImGui::IsPopupOpen("", ImGuiPopupFlags_AnyPopupId);
+
+				// Draw menu items
 				m_MenubarCallback();
+
+				// Check if any menu item is hovered or any popup opened
+				bool menu_interaction = (g.HoveredId != 0 && g.HoveredId != before_hover_id) ||
+					(!before_popup_open && ImGui::IsPopupOpen("", ImGuiPopupFlags_AnyPopupId));
+
+				// Handle dragging
+				ImGuiIO& io = ImGui::GetIO();
+				if (!menu_interaction && menubar_hovered)
+				{
+					// Allow window dragging from the menubar area
+					m_TitleBarHovered = true;
+
+					// Direct window dragging when clicked
+					if (io.MouseClicked[0])
+					{
+						ImGuiWindow* window = ImGui::GetCurrentWindow();
+						while (window->ParentWindow)
+							window = window->ParentWindow;
+
+						g.MovingWindow = window;
+						g.ActiveId = window->MoveId;
+					}
+				}
+				else if (menu_interaction)
+				{
+					// Disable dragging when interacting with menu items
+					m_TitleBarHovered = false;
+				}
+
+				ImGui::EndMenuBar();
 			}
 
-			UI::EndMenubar();
-			ImGui::EndGroup();
+			ImGui::EndChild();
 
+			// Create a child window for the window control buttons
+			ImGui::SameLine(0, 0);
+			ImGui::BeginChild("##WindowControls", ImVec2(window_controls_width, menubar_height), false,
+				ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_NoBackground);
+
+			// Window control buttons
+			const float buttonWidth = 14.0f;
+			const float buttonHeight = 14.0f;
+			const float buttonSpacing = 17.0f;
+
+			// Center the buttons vertically in the titlebar
+			const float buttonY = (titleBarHeight - buttonHeight) / 2.0f - 10.0f + titlebarVerticalOffset;
+
+			// Colors for the buttons
+			const ImU32 buttonColN = UI::Colors::ColorWithMultipliedValue(UI::Colors::Theme::text, 0.9f);
+			const ImU32 buttonColH = UI::Colors::ColorWithMultipliedValue(UI::Colors::Theme::text, 1.2f);
+			const ImU32 buttonColP = UI::Colors::Theme::textDarker;
+
+			// Position buttons at the right edge
+			float posX = window_controls_width - buttonWidth * 3 - buttonSpacing * 2 - 18.0f;
+
+			// Minimize button
+			ImGui::SetCursorPos(ImVec2(posX, buttonY));
+			if (ImGui::InvisibleButton("Minimize", ImVec2(buttonWidth, buttonHeight)))
+			{
+				if (m_WindowHandle)
+				{
+					Application::Get().QueueEvent([windowHandle = m_WindowHandle]() { glfwIconifyWindow(windowHandle); });
+				}
+			}
+
+			// Draw minimize icon
+			const int iconMinWidth = m_IconMinimize->GetWidth();
+			const int iconMinHeight = m_IconMinimize->GetHeight();
+			const float padMinY = (buttonHeight - (float)iconMinHeight) / 2.0f;
+			UI::DrawButtonImage(m_IconMinimize, buttonColN, buttonColH, buttonColP, UI::RectExpanded(UI::GetItemRect(), 0.0f, -padMinY));
+
+			// Maximize button
+			posX += buttonWidth + buttonSpacing;
+			ImGui::SetCursorPos(ImVec2(posX, buttonY));
+			if (ImGui::InvisibleButton("Maximize", ImVec2(buttonWidth, buttonHeight)))
+			{
+				Application::Get().QueueEvent([isMaximized, windowHandle = m_WindowHandle]()
+					{
+						if (isMaximized)
+							glfwRestoreWindow(windowHandle);
+						else
+							glfwMaximizeWindow(windowHandle);
+					});
+			}
+
+			// Draw maximize/restore icon
+			const int iconMaxWidth = (isMaximized ? m_IconRestore : m_IconMaximize)->GetWidth();
+			const int iconMaxHeight = (isMaximized ? m_IconRestore : m_IconMaximize)->GetHeight();
+			const float padMaxY = (buttonHeight - (float)iconMaxHeight) / 2.0f;
+			UI::DrawButtonImage(isMaximized ? m_IconRestore : m_IconMaximize, buttonColN, buttonColH, buttonColP,
+				UI::RectExpanded(UI::GetItemRect(), 0.0f, -padMaxY));
+
+			// Close button
+			posX += buttonWidth + buttonSpacing;
+			ImGui::SetCursorPos(ImVec2(posX, buttonY));
+			if (ImGui::InvisibleButton("Close", ImVec2(buttonWidth, buttonHeight)))
+			{
+				Application::Get().Close();
+			}
+
+			// Draw close icon
+			const int iconCloseWidth = m_IconClose->GetWidth();
+			const int iconCloseHeight = m_IconClose->GetHeight();
+			const float padCloseY = (buttonHeight - (float)iconCloseHeight) / 2.0f;
+			UI::DrawButtonImage(m_IconClose, UI::Colors::Theme::text, UI::Colors::ColorWithMultipliedValue(UI::Colors::Theme::text, 1.4f), buttonColP,
+				UI::RectExpanded(UI::GetItemRect(), 0.0f, -padCloseY));
+
+			ImGui::EndChild();
 		}
 		else
 		{
@@ -952,7 +1004,6 @@ namespace Walnut {
 				
 				if (m_Specification.CustomTitlebar)
 				{
-					float titleBarHeight;
 					UI_DrawTitlebar(titleBarHeight);
 					ImGui::SetCursorPosY(titleBarHeight);
 
@@ -989,6 +1040,8 @@ namespace Walnut {
 			wd->ClearValue.color.float32[1] = clear_color.y * clear_color.w;
 			wd->ClearValue.color.float32[2] = clear_color.z * clear_color.w;
 			wd->ClearValue.color.float32[3] = clear_color.w;
+			if (main_draw_data->CmdListsCount == 0)
+				return; // nothing to render
 			if (!main_is_minimized)
 				FrameRender(this, wd, main_draw_data);
 

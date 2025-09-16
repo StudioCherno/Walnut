@@ -111,6 +111,7 @@ namespace Walnut {
 		float m_FrameTime = 0.0f;
 		float m_LastFrameTime = 0.0f;
 
+		float titleBarHeight = 0.0f;
 		bool m_TitleBarHovered = false;
 
 		std::vector<std::shared_ptr<Layer>> m_LayerStack;

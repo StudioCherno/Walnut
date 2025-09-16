@@ -12,6 +12,7 @@
 #include "spdlog/fmt/ostr.h"
 
 #include <map>
+#include <format>
 
 #define WL_ASSERT_MESSAGE_BOX (!WL_DIST && WL_PLATFORM_WINDOWS)
 
@@ -49,9 +50,9 @@ namespace Walnut {
 
 		static bool HasTag(const std::string& tag) { return s_EnabledTags.find(tag) != s_EnabledTags.end(); }
 		static std::map<std::string, TagDetails>& EnabledTags() { return s_EnabledTags; }
-
+		
 		template<typename... Args>
-		static void PrintMessageTag(Log::Type type, Log::Level level, std::string_view tag, std::format_string<Args...> format, Args&&... args);
+		static void PrintMessageTag(Log::Type type, Log::Level level, std::string_view tag, std::string_view format, Args&&... args);
 
 		static void PrintMessageTag(Log::Type type, Log::Level level, std::string_view tag, std::string_view message);
 
@@ -130,13 +131,16 @@ namespace Walnut {
 
 
 	template<typename... Args>
-	void Log::PrintMessageTag(Log::Type type, Log::Level level, std::string_view tag, const std::format_string<Args...> format, Args&&... args)
+	void Log::PrintMessageTag(Log::Type type, Log::Level level, std::string_view tag, std::string_view format, Args&&... args)
 	{
 		auto detail = s_EnabledTags[std::string(tag)];
 		if (detail.Enabled && detail.LevelFilter <= level)
 		{
 			auto logger = (type == Type::Core) ? GetCoreLogger() : GetClientLogger();
-			std::string formatted = std::format(format, std::forward<Args>(args)...);
+
+			// Use std::vformat with std::make_format_args to handle variadic arguments
+			std::string formatted = std::vformat(format, std::make_format_args(args...));
+
 			switch (level)
 			{
 			case Level::Trace:
