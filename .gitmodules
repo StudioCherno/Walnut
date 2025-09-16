@@ -1,7 +1,3 @@
-[submodule "Walnut/vendor/imgui/src"]
-	path = Walnut/vendor/imgui/src
-	url = https://github.com/bossman602/imgui
-	branch = docking
 [submodule "vendor/glfw"]
 	path = vendor/glfw
 	url = https://github.com/thecherno/glfw
@@ -20,6 +16,3 @@
 [submodule "Walnut-Modules/Walnut-Networking"]
 	path = Walnut-Modules/Walnut-Networking
 	url = https://github.com/StudioCherno/Walnut-Networking
-[submodule "imgui"]
-	path = imgui
-	url = https://github.com/bossman602/imgui.git
