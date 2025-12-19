@@ -22,7 +22,7 @@ git clone --recurse-submodules https://github.com/StudioCherno/Walnut.git
 
 Once you've cloned the repository, you can run one of the following setup scripts to generate Visual Studio 2022 solution/project files. 
 
-*on Windows command line:*
+*on Windows command standard line (cmd.exe):*
 
 ``` bash
 ./scripts/setup.ps1
