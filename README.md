@@ -8,17 +8,47 @@ Currently supports Windows - with macOS and Linux support planned. Setup scripts
 _<center>Forest Launcher - an application made with Walnut</center>_
 
 ## Requirements
+
 - [Visual Studio 2022](https://visualstudio.com) (not strictly required, however included setup scripts only support this)
 - [Vulkan SDK](https://vulkan.lunarg.com/sdk/home#windows) (preferably a recent version)
 
 ## Getting Started
-Once you've cloned, run `scripts/Setup.bat` to generate Visual Studio 2022 solution/project files. Once you've opened the solution, you can run the WalnutApp project to see a basic example (code in `WalnutApp.cpp`). I recommend modifying that WalnutApp project to create your own application, as everything should be setup and ready to go.
+
+In order to clone the repository, you'll need to grab the submodules. To do that, you will need the following command line:
+
+``` bash
+git clone --recurse-submodules https://github.com/StudioCherno/Walnut.git
+```
+
+Once you've cloned the repository, you can run one of the following setup scripts to generate Visual Studio 2022 solution/project files. 
+
+*on Windows command line:*
+
+``` bash
+./scripts/setup.ps1
+```
+
+*on Windows Powershell:*
+
+``` bash
+./scripts/Setup.ps1
+```
+
+*or, if you have premake already installed:*
+
+``` bash
+premake5 vs2022
+```
+
+Once you've opened the solution, you can run the WalnutApp project to see a basic example (code in `WalnutApp.cpp`). I recommend modifying that WalnutApp project to create your own application, as everything should be setup and ready to go.
 
 ### 3rd party libaries
+
 - [Dear ImGui](https://github.com/ocornut/imgui)
 - [GLFW](https://github.com/glfw/glfw)
 - [stb_image](https://github.com/nothings/stb)
 - [GLM](https://github.com/g-truc/glm) (included for convenience)
 
 ### Additional
+
 - Walnut uses the [Roboto](https://fonts.google.com/specimen/Roboto) font ([Apache License, Version 2.0](https://www.apache.org/licenses/LICENSE-2.0))
