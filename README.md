@@ -31,7 +31,7 @@ _on Windows using the command prompt cmd.exe:_
 _on Windows Powershell:_
 
 ``` powershell
-./scripts/Setup.ps1
+./scripts/setup.ps1
 ```
 
 _or, if you have premake already installed:_
