@@ -25,7 +25,7 @@ Once you've cloned the repository, you can run one of the following setup script
 *on Windows command standard line (cmd.exe):*
 
 ``` bash
-./scripts/setup.ps1
+./scripts/setup.bat
 ```
 
 *on Windows Powershell:*
@@ -42,7 +42,7 @@ premake5 vs2022
 
 Once you've opened the solution, you can run the WalnutApp project to see a basic example (code in `WalnutApp.cpp`). I recommend modifying that WalnutApp project to create your own application, as everything should be setup and ready to go.
 
-### 3rd party libaries
+### 3rd party libraries
 
 - [Dear ImGui](https://github.com/ocornut/imgui)
 - [GLFW](https://github.com/glfw/glfw)
