@@ -14,7 +14,7 @@ _<center>Forest Launcher - an application made with Walnut</center>_
 
 ## Getting Started
 
-In order to fuly clone the repository run the following command:
+In order to fully clone the repository run the following command:
 
 ``` bash
 git clone --recurse-submodules https://github.com/StudioCherno/Walnut.git
