@@ -14,7 +14,7 @@ _<center>Forest Launcher - an application made with Walnut</center>_
 
 ## Getting Started
 
-In order to clone the repository, you'll need to grab the submodules. To do that, you will need the following command line:
+In order to fuly clone the repository run the following command:
 
 ``` bash
 git clone --recurse-submodules https://github.com/StudioCherno/Walnut.git
@@ -22,21 +22,21 @@ git clone --recurse-submodules https://github.com/StudioCherno/Walnut.git
 
 Once you've cloned the repository, you can run one of the following setup scripts to generate Visual Studio 2022 solution/project files. 
 
-*on Windows command standard line (cmd.exe):*
+_on Windows using the command prompt cmd.exe:_
 
-``` bash
-./scripts/setup.bat
+``` cmd
+./scripts/Setup.bat
 ```
 
-*on Windows Powershell:*
+_on Windows Powershell:_
 
-``` bash
+``` powershell
 ./scripts/Setup.ps1
 ```
 
-*or, if you have premake already installed:*
+_or, if you have premake already installed:_
 
-``` bash
+``` powershell
 premake5 vs2022
 ```
 
