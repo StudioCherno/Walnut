@@ -12,7 +12,7 @@ project "Walnut"
       "src",
 
       "../vendor/imgui",
-      "../vendor/glfw/include",
+      "../vendor/GLFW/include",
       "../vendor/stb_image",
 
       "%{IncludeDir.VulkanSDK}",
