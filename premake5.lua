@@ -8,3 +8,11 @@ outputdir = "%{cfg.buildcfg}-%{cfg.system}-%{cfg.architecture}"
 
 include "WalnutExternal.lua"
 include "WalnutApp"
+
+filter "system:windows"
+    systemversion "latest"
+    defines { "WL_PLATFORM_WINDOWS" }
+    links { "%{Library.Vulkan}" }
+
+filter "system:linux"
+    links { "vulkan" }
